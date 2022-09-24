@@ -1,0 +1,1 @@
+/usr/bin/cc -g -fprofile-arcs -ftest-coverage CMakeFiles/ECE454_Lab2.dir/ECE454-Lab2.o CMakeFiles/ECE454_Lab2.dir/utilities.o CMakeFiles/ECE454_Lab2.dir/fcyc.o CMakeFiles/ECE454_Lab2.dir/clock.o CMakeFiles/ECE454_Lab2.dir/implementation_reference.o CMakeFiles/ECE454_Lab2.dir/implementation.o -o ECE454_Lab2 

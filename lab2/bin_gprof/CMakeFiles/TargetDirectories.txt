@@ -1,0 +1,3 @@
+/homes/n/nietian1/ece454/lab2/bin_gprof/CMakeFiles/rebuild_cache.dir
+/homes/n/nietian1/ece454/lab2/bin_gprof/CMakeFiles/edit_cache.dir
+/homes/n/nietian1/ece454/lab2/bin_gprof/CMakeFiles/ECE454_Lab2.dir

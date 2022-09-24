@@ -1,0 +1,52 @@
+Q1. implementation_driver
+Q2. g: 1 0.188
+    gprof: 1.17 0.22
+    gcov: 1.28 0.24
+    O2: 1.57 0.295
+    O3: 1.7 0.32
+    Os: 1.54 0.29
+Q3. O3 is slowest as it enables the heaviest optimizations.
+Q4. -g is the fastest because it just tells gcc to dump debugging info on seg fault or such exceptions.
+Q5. gprof is faster because it just adds instrumentation code that measures the time spent on function calls as well as generates a graph of function calls. However, gcov add instrumentation code that measures the frequency of every statement, and thus has larger overhead and therefore is slower.
+Q6. g: 60640
+    gprof: 60840
+    gcov: 93104
+    O2: 33024
+    O3: 33080
+    Os: 29016
+Q7. Os is the smallest because the purpose of the -Os flag is to optimize the output binary size.
+Q8. gcov is the largest because is needs to add a bunch of instrumentation code for measurements of each statement.
+Q9. gprof is smaller because it just adds instrumentation code per function, while gcov adds instrumentation code per statement.
+Q10. g: 48.08
+     gprof: 1 57.35
+     gcov: 1.06 54.04
+     O2: 3.63 15.78
+     O3: 3.64 15.75
+     Os: 3.19 17.96
+Q11. gprof is the slowest because it does not enable any optimizations and additionaly, runs instrumentation code.
+Q12. O3 is the fastest because it has the most performance optimizations.
+Q13. gprof is slower because it uses OS interrupts to calculate time measurements, and trapping into the kernel is slow.
+Q14. -g:  
+    45.36%  processRotateCWReference
+    40.43%  copyFrame
+    3.21%   get_counter
+    -O2:
+    38.78%  processRotateCWReference
+    27.17%   copyFrame
+    26.25%   get_counter
+    -O3:
+    51.16   processRotateCCWReference
+    36.66   copyFrame
+    2.64    start_comp_counter
+Q15. processRotateCCWReference is basically a wrapper function that is based on processRotateCWReference. Therefore, in -g and -O2, whenever it is called, the actual time is spend in processRotateCWReference, and therefore processRotateCWReference takes the most time. 
+However, in -O3, processRotateCWReference is likely to be inlined, and thus processRotateCCWReference technically does not call processRotateCWReference anymore, and thus it takes most of the time in -O3.
+Q16. -g: 40 instructions for processRotateCCWReference
+     -O3: 204 instructions for processRotateCCWReference
+     ratio: 0.196x
+     This makes sense because for the -g version, processRotateCWReference is not inlined, therefore most of the time just need to branch to processRotateCWReference.
+     However in -O3, processRotateCWReference is inlined, therefore it is expanded to a bunch more of instructions, not just a branch anymore.
+Q17. 
+    1. processMoveLeft/processMoveRight because they were called a combined 124 times (left 68, right 56)
+    2. processMoveDown/processMoveUp because they were called a combined 108 times (down 76, up 32)
+    3. processRotateCW/processRotateCCW because they were called a combined 96 times (CW 44, CCW 52)
+    4. processMirrorX/processMirrorY because they were called a combined 72 times (X 44, Y 28)

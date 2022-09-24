@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/homes/n/nietian1/ece454/lab2/implementation.c
+stdio.h
+-
+string.h
+-
+stdbool.h
+-
+utilities.h
+/homes/n/nietian1/ece454/lab2/utilities.h
+implementation_reference.h
+/homes/n/nietian1/ece454/lab2/implementation_reference.h
+
+/homes/n/nietian1/ece454/lab2/implementation_reference.h
+
+/homes/n/nietian1/ece454/lab2/utilities.h
+

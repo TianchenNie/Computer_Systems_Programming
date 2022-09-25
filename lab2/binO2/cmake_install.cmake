@@ -1,4 +1,4 @@
-# Install script for directory: /homes/n/nietian1/ece454/lab2
+# Install script for directory: /homes/n/nietian1/ece454/Computer_Systems_Programming/lab2
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/homes/n/nietian1/ece454/lab2/binO2/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/binO2/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

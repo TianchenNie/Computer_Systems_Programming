@@ -1,4 +1,4 @@
-Q1. implementation_driver
+Q1. implementation_driver (and its sub functions)
 Q2. g: 1 0.188
     gprof: 1.17 0.22
     gcov: 1.28 0.24
@@ -35,9 +35,9 @@ Q14. -g:
     27.17%   copyFrame
     26.25%   get_counter
     -O3:
-    51.16   processRotateCCWReference
-    36.66   copyFrame
-    2.64    start_comp_counter
+    51.16%   processRotateCCWReference
+    36.66%   copyFrame
+    2.64%   start_comp_counter
 Q15. processRotateCCWReference is basically a wrapper function that is based on processRotateCWReference. Therefore, in -g and -O2, whenever it is called, the actual time is spend in processRotateCWReference, and therefore processRotateCWReference takes the most time. 
 However, in -O3, processRotateCWReference is likely to be inlined, and thus processRotateCCWReference technically does not call processRotateCWReference anymore, and thus it takes most of the time in -O3.
 Q16. -g: 40 instructions for processRotateCCWReference
@@ -46,7 +46,12 @@ Q16. -g: 40 instructions for processRotateCCWReference
      This makes sense because for the -g version, processRotateCWReference is not inlined, therefore most of the time just need to branch to processRotateCWReference.
      However in -O3, processRotateCWReference is inlined, therefore it is expanded to a bunch more of instructions, not just a branch anymore.
 Q17. 
-    1. processMoveLeft/processMoveRight because they were called a combined 124 times (left 68, right 56)
-    2. processMoveDown/processMoveUp because they were called a combined 108 times (down 76, up 32)
-    3. processRotateCW/processRotateCCW because they were called a combined 96 times (CW 44, CCW 52)
-    4. processMirrorX/processMirrorY because they were called a combined 72 times (X 44, Y 28)
+    1. processMoveDown called 76 times
+    2. processMoveLeft called 68 times
+    3. processMoveRight called 56 times
+    4. processRotateCCW called 52 times
+    5. processRotateCW, processMirrorX called 44 times
+    6. processMoveUp called 32 times
+    7. processMirrorY called 28 times
+Q18.
+    -O

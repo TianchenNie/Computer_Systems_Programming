@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/homes/n/nietian1/ece454/lab2/ECE454-Lab2.c
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/ECE454-Lab2.c
 ctype.h
 -
 stdio.h
@@ -20,17 +20,17 @@ memory.h
 stdbool.h
 -
 loadbmp.h
-/homes/n/nietian1/ece454/lab2/loadbmp.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/loadbmp.h
 utilities.h
-/homes/n/nietian1/ece454/lab2/utilities.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/utilities.h
 fcyc.h
-/homes/n/nietian1/ece454/lab2/fcyc.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/fcyc.h
 implementation_reference.h
-/homes/n/nietian1/ece454/lab2/implementation_reference.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation_reference.h
 implementation.h
-/homes/n/nietian1/ece454/lab2/implementation.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation.h
 
-/homes/n/nietian1/ece454/lab2/clock.c
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/clock.c
 stdio.h
 -
 stdlib.h
@@ -40,11 +40,11 @@ unistd.h
 sys/times.h
 -
 clock.h
-/homes/n/nietian1/ece454/lab2/clock.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/clock.h
 
-/homes/n/nietian1/ece454/lab2/clock.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/clock.h
 
-/homes/n/nietian1/ece454/lab2/fcyc.c
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/fcyc.c
 stdlib.h
 -
 sys/times.h
@@ -54,13 +54,13 @@ stdio.h
 stdbool.h
 -
 clock.h
-/homes/n/nietian1/ece454/lab2/clock.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/clock.h
 fcyc.h
-/homes/n/nietian1/ece454/lab2/fcyc.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/fcyc.h
 
-/homes/n/nietian1/ece454/lab2/fcyc.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/fcyc.h
 
-/homes/n/nietian1/ece454/lab2/implementation.c
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation.c
 stdio.h
 -
 string.h
@@ -68,13 +68,13 @@ string.h
 stdbool.h
 -
 utilities.h
-/homes/n/nietian1/ece454/lab2/utilities.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/utilities.h
 implementation_reference.h
-/homes/n/nietian1/ece454/lab2/implementation_reference.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation_reference.h
 
-/homes/n/nietian1/ece454/lab2/implementation.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation.h
 
-/homes/n/nietian1/ece454/lab2/implementation_reference.c
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation_reference.c
 stdio.h
 -
 string.h
@@ -82,11 +82,11 @@ string.h
 stdbool.h
 -
 utilities.h
-/homes/n/nietian1/ece454/lab2/utilities.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/utilities.h
 
-/homes/n/nietian1/ece454/lab2/implementation_reference.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/implementation_reference.h
 
-/homes/n/nietian1/ece454/lab2/loadbmp.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/loadbmp.h
 stdlib.h
 -
 string.h
@@ -94,7 +94,7 @@ string.h
 stdio.h
 -
 
-/homes/n/nietian1/ece454/lab2/utilities.c
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/utilities.c
 stdio.h
 -
 stdlib.h
@@ -104,7 +104,7 @@ string.h
 stdbool.h
 -
 utilities.h
-/homes/n/nietian1/ece454/lab2/utilities.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/utilities.h
 
-/homes/n/nietian1/ece454/lab2/utilities.h
+/homes/n/nietian1/ece454/Computer_Systems_Programming/lab2/utilities.h
 

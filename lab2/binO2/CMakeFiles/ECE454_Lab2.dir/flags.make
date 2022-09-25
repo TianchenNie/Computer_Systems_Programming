@@ -6,5 +6,5 @@ C_DEFINES =
 
 C_INCLUDES = 
 
-C_FLAGS = -O2 -std=gnu99
+C_FLAGS = -O0 -std=gnu99
 

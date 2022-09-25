@@ -325,151 +325,265 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
 //               sensor_values[sensorValueIdx].value);
         if (!strcmp(sensor_values[sensorValueIdx].key, "W")) {
             net_shift_ver += sensor_values[sensorValueIdx].value;
-            // processMoveUp(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
+            }
         //    printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "A")) {
             // printBMP(width, height, frame_buffer);
             net_shift_hor -= sensor_values[sensorValueIdx].value;
-            // processMoveLeft(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
+            }
             // printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "S")) {
-            // printBMP(width, height, frame_buffer);
             net_shift_ver -= sensor_values[sensorValueIdx].value;
-            // processMoveDown(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
+            }
             // printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "D")) {
             net_shift_hor += sensor_values[sensorValueIdx].value;
-            // processMoveRight(frame_buffer, width, height, sensor_values[sensorValueIdx].value);
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
+            }
 //            printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "CW")) {
             int value = sensor_values[sensorValueIdx].value;
-            net_rotate += sensor_values[sensorValueIdx].value;
+            net_rotate += value;
+            /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
                 processMoveRight(frame_buffer, width, height, net_shift_hor);
+                net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
                 processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
                 processMoveUp(frame_buffer, width, height, net_shift_ver);
+                net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
                 processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                net_shift_ver = 0;
             }
-            if (value > 0) {
-                processRotateCW(frame_buffer, width, height, sensor_values[sensorValueIdx].value % 4);
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
             }
-            else if (value < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-sensor_values[sensorValueIdx].value % 4));
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
             }
-            net_shift_hor = 0;
-            net_shift_ver = 0;
 //            printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "CCW")) {
             int value = sensor_values[sensorValueIdx].value;
-            net_rotate -= sensor_values[sensorValueIdx].value;
+            net_rotate -= value;
+            /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
                 processMoveRight(frame_buffer, width, height, net_shift_hor);
+                net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
                 processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
                 processMoveUp(frame_buffer, width, height, net_shift_ver);
+                net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
                 processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                net_shift_ver = 0;
             }
-            if (value > 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (sensor_values[sensorValueIdx].value % 4));
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
             }
-            else if (value < 0) {
-                processRotateCW(frame_buffer, width, height, -sensor_values[sensorValueIdx].value % 4);
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
             }
-            net_shift_hor = 0;
-            net_shift_ver = 0;
 //            printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "MX")) {
+            net_mirror_x = net_mirror_x ^ 1;
+            /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
                 processMoveRight(frame_buffer, width, height, net_shift_hor);
+                net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
                 processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
                 processMoveUp(frame_buffer, width, height, net_shift_ver);
+                net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
                 processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                net_shift_ver = 0;
             }
-            // if (net_rotate > 0) {
-            //     processRotateCW(frame_buffer, width, height, net_rotate % 4);
-            // }
-            // else if (net_rotate < 0) {
-            //     processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
-            // }
-            processMirrorX(frame_buffer, width, height);
-            net_shift_hor = 0;
-            net_shift_ver = 0;
-            net_rotate = 0;
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
 //            printBMP(width, height, frame_buffer);
         } else if (!strcmp(sensor_values[sensorValueIdx].key, "MY")) {
-            // net_mirror_y += 1;
-            // if (net_mirror_y > 1) {
-            //     net_mirror_y = 0;
-            // }
+            net_mirror_y = net_mirror_y ^ 1;
+            /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
                 processMoveRight(frame_buffer, width, height, net_shift_hor);
+                net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
                 processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
                 processMoveUp(frame_buffer, width, height, net_shift_ver);
+                net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
                 processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                net_shift_ver = 0;
             }
-            // if (net_rotate > 0) {
-            //     processRotateCW(frame_buffer, width, height, net_rotate % 4);
-            // }
-            // else if (net_rotate < 0) {
-            //     processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
-            // }
-            processMirrorY(frame_buffer, width, height);
-            net_shift_hor = 0;
-            net_shift_ver = 0;
-            net_rotate = 0;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
 //            printBMP(width, height, frame_buffer);
         }
         processed_frames += 1;
 
         if (processed_frames % 25 == 0){
+            /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
                 processMoveRight(frame_buffer, width, height, net_shift_hor);
+                net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
                 processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
                 processMoveUp(frame_buffer, width, height, net_shift_ver);
+                net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
                 processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                net_shift_ver = 0;
             }
-            // if (net_rotate > 0) {
-            //     processRotateCW(frame_buffer, width, height, net_rotate % 4);
-            // }
-            // else if (net_rotate < 0) {
-            //     processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
-            // }
-            net_shift_hor = 0;
-            net_shift_ver = 0;
-            net_rotate = 0;
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX(frame_buffer, width, height);
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY(frame_buffer, width, height);
+                net_mirror_y = 0;
+            }
             verifyFrame(frame_buffer, width, height, grading_mode);
         }
-    
-        // }
     }
     return;
 }

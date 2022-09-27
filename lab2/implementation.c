@@ -4,6 +4,11 @@
 #include "utilities.h"  // DO NOT REMOVE this line
 #include "implementation_reference.h"   // DO NOT REMOVE this line
 
+
+#define min(_a,_b) (((_a) < (_b)) ? (_a) : (_b))
+#define max(_a,_b) (((_a) > (_b)) ? (_a) : (_b))
+#define abs(_a) (((_a) >= 0) ? (_a) : (-1*(_a)))
+
 // TODO: find a way to accumulate rotates, shifts, and mirrors. Currently the problem
 // is that rotate then mirror != mirror then rotate && shift then mirror != mirror then shift
 // TODO: cache the top left bottom right bounds of image of interest, right now rotating/looping through
@@ -13,6 +18,51 @@ void processMoveUp(unsigned char *buffer_frame, unsigned width, unsigned height,
 void processMoveDown(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
 void processMoveLeft(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
 void processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
+
+/* [row, col] */
+static int top_left[2];
+static int bottom_left[2];
+static int top_right[2];
+static int bottom_right[2];
+
+void print_bounds() {
+    printf("top_left row col (%d, %d)\n", top_left[0], top_left[1]);
+    printf("bottom_left row col (%d, %d)\n", bottom_left[0], bottom_left[1]);
+    printf("top_right row col (%d, %d)\n", top_right[0], top_right[1]);
+    printf("bottom_right row col (%d, %d)\n", bottom_right[0], bottom_right[1]);
+}
+
+void set_image_bounds(unsigned char *buffer_frame, unsigned width, unsigned height) {
+    int top_row = -1;
+    int left_col = 1e6;
+    int bot_row = -1;
+    int right_col = -1;
+    size_t s = sizeof(int);
+    for (int row = 0; row < height; ++row) {
+        for (int col = 0; col < width; ++col) {
+            int cell = row * width * 3 + col * 3;
+            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
+                // printf("CELL 1: %d\n", buffer_frame[cell]);
+                // printf("CELL 2: %d\n", buffer_frame[cell + 1]);
+                // printf("CELL 3: %d\n", buffer_frame[cell + 2]);
+                if (top_row < 0) {
+                    top_row = row;
+                }
+                left_col = min(col, left_col);
+                bot_row = max(row, bot_row);
+                right_col = max(col, right_col);
+            }
+        }
+    }
+    top_left[0] = top_row;
+    top_left[1] = left_col;
+    bottom_left[0] = bot_row;
+    bottom_left[1] = left_col;
+    top_right[0] = top_row;
+    top_right[1] = right_col;
+    bottom_right[0] = bot_row;
+    bottom_right[1] = right_col;
+}
 
 /***********************************************************************************************************************
  * @param buffer_frame - pointer pointing to a buffer storing the imported 24-bit bitmap image
@@ -30,17 +80,23 @@ void processMoveUp(unsigned char *buffer_frame, unsigned width, unsigned height,
         return;
     }
     int shift = offset * width * 3;
-    int cell = shift;
-    for ( ; cell < width * height * 3; cell += 3) {
-        if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-            buffer_frame[cell - shift] = buffer_frame[cell];
-            buffer_frame[cell] = 255;
-            buffer_frame[cell + 1 - shift] = buffer_frame[cell + 1];
-            buffer_frame[cell + 1] = 255;
-            buffer_frame[cell + 2 - shift] = buffer_frame[cell + 2];
-            buffer_frame[cell + 2] = 255;
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_left[1]; col <= top_right[1]; ++col) {
+            int cell = row * width * 3 + col * 3;
+            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
+                buffer_frame[cell - shift] = buffer_frame[cell];
+                buffer_frame[cell] = 255;
+                buffer_frame[cell + 1 - shift] = buffer_frame[cell + 1];
+                buffer_frame[cell + 1] = 255;
+                buffer_frame[cell + 2 - shift] = buffer_frame[cell + 2];
+                buffer_frame[cell + 2] = 255;
+            }
         }
     }
+    top_left[0] -= offset;
+    top_right[0] -= offset;
+    bottom_left[0] -= offset;
+    bottom_right[0] -= offset;
     return;
 }
 
@@ -60,17 +116,23 @@ void processMoveDown(unsigned char *buffer_frame, unsigned width, unsigned heigh
         return;
     }
     int shift = offset * width * 3;
-    int cell = width * height * 3 - 1 - (offset * width * 3);
-    for ( ; cell >= 0; cell -= 3) {
-        if (buffer_frame[cell] != 255 || buffer_frame[cell - 1] != 255 || buffer_frame[cell - 2] != 255) {
-            buffer_frame[cell + shift] = buffer_frame[cell];
-            buffer_frame[cell] = 255;
-            buffer_frame[cell - 1 + shift] = buffer_frame[cell - 1];
-            buffer_frame[cell - 1] = 255;
-            buffer_frame[cell - 2 + shift] = buffer_frame[cell - 2];
-            buffer_frame[cell - 2] = 255;
+    for (int row = bottom_left[0]; row >= top_left[0]; --row) {
+        for (int col = bottom_left[1]; col <= bottom_right[1]; ++col) {
+            int cell = row * width * 3 + col * 3;
+            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
+                buffer_frame[cell + shift] = buffer_frame[cell];
+                buffer_frame[cell] = 255;
+                buffer_frame[cell + 1 + shift] = buffer_frame[cell + 1];
+                buffer_frame[cell + 1] = 255;
+                buffer_frame[cell + 2 + shift] = buffer_frame[cell + 2];
+                buffer_frame[cell + 2] = 255;
+            }
         }
     }
+    top_left[0] += offset;
+    top_right[0] += offset;
+    bottom_left[0] += offset;
+    bottom_right[0] += offset;
     return;
 }
 
@@ -90,17 +152,23 @@ void processMoveLeft(unsigned char *buffer_frame, unsigned width, unsigned heigh
         return;
     }
     int shift = offset * 3;
-    int cell = shift;
-    for ( ; cell < width * height * 3; cell += 3) {
-        if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-            buffer_frame[cell - shift] = buffer_frame[cell];
-            buffer_frame[cell] = 255;
-            buffer_frame[cell + 1 - shift] = buffer_frame[cell + 1];
-            buffer_frame[cell + 1] = 255;
-            buffer_frame[cell + 2 - shift] = buffer_frame[cell + 2];
-            buffer_frame[cell + 2] = 255;
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_left[1]; col <= top_right[1]; ++col) {
+            int cell = row * width * 3 + col * 3;
+            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
+                buffer_frame[cell - shift] = buffer_frame[cell];
+                buffer_frame[cell] = 255;
+                buffer_frame[cell + 1 - shift] = buffer_frame[cell + 1];
+                buffer_frame[cell + 1] = 255;
+                buffer_frame[cell + 2 - shift] = buffer_frame[cell + 2];
+                buffer_frame[cell + 2] = 255;
+            }
         }
     }
+    top_left[1] -= offset;
+    top_right[1] -= offset;
+    bottom_left[1] -= offset;
+    bottom_right[1] -= offset;
     return;
 }
 
@@ -120,17 +188,23 @@ void processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned heig
         return;
     }
     int shift = offset * 3;
-    int cell = width * height * 3 - 1 - shift;
-    for ( ; cell >= 0; cell -= 3) {
-        if (buffer_frame[cell] != 255 || buffer_frame[cell - 1] != 255 || buffer_frame[cell - 2] != 255) {
-            buffer_frame[cell + shift] = buffer_frame[cell];
-            buffer_frame[cell] = 255;
-            buffer_frame[cell - 1 + shift] = buffer_frame[cell - 1];
-            buffer_frame[cell - 1] = 255;
-            buffer_frame[cell - 2 + shift] = buffer_frame[cell - 2];
-            buffer_frame[cell - 2] = 255;
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_right[1]; col >= top_left[1]; --col) {
+            int cell = row * width * 3 + col * 3;
+            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
+                buffer_frame[cell + shift] = buffer_frame[cell];
+                buffer_frame[cell] = 255;
+                buffer_frame[cell + 1 + shift] = buffer_frame[cell + 1];
+                buffer_frame[cell + 1] = 255;
+                buffer_frame[cell + 2 + shift] = buffer_frame[cell + 2];
+                buffer_frame[cell + 2] = 255;
+            }
         }
     }
+    top_left[1] += offset;
+    top_right[1] += offset;
+    bottom_left[1] += offset;
+    bottom_right[1] += offset;
     return;
 }
 
@@ -141,24 +215,78 @@ void processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned heig
  * @return
  **********************************************************************************************************************/
 void processMirrorX(unsigned char *buffer_frame, unsigned int width, unsigned int height) {
-    int top_row = 0;
-    int bottom_row = height - 1;
-    // store shifted pixels to temporary buffer
-    for (; bottom_row > top_row; --bottom_row, ++top_row) {
-        for (int col = 0; col < width; ++col) {
-            int top_row_cell = top_row * width * 3 + col * 3;
-            int bottom_row_cell = bottom_row * width * 3 + col * 3;
-            unsigned char temp_1 = buffer_frame[top_row_cell];
-            unsigned char temp_2 = buffer_frame[top_row_cell + 1];
-            unsigned char temp_3 = buffer_frame[top_row_cell + 2];
-            buffer_frame[top_row_cell] = buffer_frame[bottom_row_cell];
-            buffer_frame[top_row_cell + 1] = buffer_frame[bottom_row_cell + 1];
-            buffer_frame[top_row_cell + 2] = buffer_frame[bottom_row_cell + 2];
-            buffer_frame[bottom_row_cell] = temp_1;
-            buffer_frame[bottom_row_cell + 1] = temp_2;
-            buffer_frame[bottom_row_cell + 2] = temp_3;
+    int top_row = top_left[0];
+    int bottom_row = bottom_left[0];
+    float x_axis = (height - 1) * 0.5;
+    float distance_top_row = abs(top_row - x_axis);
+    float distance_bot_row = abs(bottom_row - x_axis);
+    int row = distance_bot_row > distance_top_row ? bottom_row : top_row;
+    int mirrored_row = height - 1 - row;
+    if (mirrored_row > row) {
+        // store shifted pixels to temporary buffer
+        for (; row < mirrored_row; ++row, --mirrored_row) {
+            for (int col = top_left[1]; col <= top_right[1]; ++col) {
+                int my_cell = row * width * 3 + col * 3;
+                int mirrored_cell = mirrored_row * width * 3 + col * 3;
+                unsigned char temp_1 = buffer_frame[my_cell];
+                unsigned char temp_2 = buffer_frame[my_cell + 1];
+                unsigned char temp_3 = buffer_frame[my_cell + 2];
+                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
+                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
+                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
+                buffer_frame[mirrored_cell] = temp_1;
+                buffer_frame[mirrored_cell + 1] = temp_2;
+                buffer_frame[mirrored_cell + 2] = temp_3;
+            }
         }
     }
+    else if (mirrored_row < row) {
+        // store shifted pixels to temporary buffer
+        for (; row > mirrored_row; --row, ++mirrored_row) {
+            for (int col = top_left[1]; col <= top_right[1]; ++col) {
+                int my_cell = row * width * 3 + col * 3;
+                int mirrored_cell = mirrored_row * width * 3 + col * 3;
+                unsigned char temp_1 = buffer_frame[my_cell];
+                unsigned char temp_2 = buffer_frame[my_cell + 1];
+                unsigned char temp_3 = buffer_frame[my_cell + 2];
+                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
+                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
+                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
+                buffer_frame[mirrored_cell] = temp_1;
+                buffer_frame[mirrored_cell + 1] = temp_2;
+                buffer_frame[mirrored_cell + 2] = temp_3;
+            }
+        }
+    }
+    else {
+        return;
+    }
+    // // store shifted pixels to temporary buffer
+    // for (; row < bottom_row; ++row) {
+    //     for (int col = top_left[1]; col <= top_right[1]; ++col) {
+    //         int my_cell = row * width * 3 + col * 3;
+    //         int mirrored_cell = (height - 1 - row) * width * 3 + col * 3;
+    //         unsigned char temp_1 = buffer_frame[my_cell];
+    //         unsigned char temp_2 = buffer_frame[my_cell + 1];
+    //         unsigned char temp_3 = buffer_frame[my_cell + 2];
+    //         buffer_frame[my_cell] = buffer_frame[mirrored_cell];
+    //         buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
+    //         buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
+    //         buffer_frame[mirrored_cell] = temp_1;
+    //         buffer_frame[mirrored_cell + 1] = temp_2;
+    //         buffer_frame[mirrored_cell + 2] = temp_3;
+    //     }
+    // }
+    int temp = top_left[0];
+    top_left[0] = bottom_left[0] + (x_axis - bottom_left[0]) * 2;
+    top_right[0] = top_left[0];
+    bottom_left[0] = temp + (x_axis - temp) * 2;
+    bottom_right[0] = bottom_left[0];
+    // int old_bottom = bottom_left[0];
+    // bottom_left[0] = height - 1 - top_left[0];
+    // bottom_right[0] = height - 1 - top_left[0];
+    // top_left[0] = height - 1 - old_bottom;
+    // top_right[0] = height - 1 - old_bottom;
     return;
 }
 
@@ -169,23 +297,201 @@ void processMirrorX(unsigned char *buffer_frame, unsigned int width, unsigned in
  * @return
  **********************************************************************************************************************/
 void processMirrorY(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    int left_col = 0;
-    int right_col = width - 1;
-    for (; left_col < right_col; ++left_col, --right_col) {
-        for (int row = 0; row < height; ++row) {
-            int left_col_cell = row * width * 3 + left_col * 3;
-            int right_col_cell = row * width * 3 + right_col * 3;
-            unsigned char temp_1 = buffer_frame[left_col_cell];
-            unsigned char temp_2 = buffer_frame[left_col_cell + 1];
-            unsigned char temp_3 = buffer_frame[left_col_cell + 2];
-            buffer_frame[left_col_cell] = buffer_frame[right_col_cell];
-            buffer_frame[left_col_cell + 1] = buffer_frame[right_col_cell + 1];
-            buffer_frame[left_col_cell + 2] = buffer_frame[right_col_cell + 2];
-            buffer_frame[right_col_cell] = temp_1;
-            buffer_frame[right_col_cell + 1] = temp_2;
-            buffer_frame[right_col_cell + 2] = temp_3;
+    int left_col = top_left[1];
+    int right_col = top_right[1];
+    float y_axis = (width - 1) * 0.5;
+    float distance_left_col = abs(left_col - y_axis);
+    float distance_right_col = abs(right_col - y_axis);
+    // printf("Distance_left_col: %f\n", abs(left_col - y_axis));
+    // printf("Distance_right_col: %f\n", distance_right_col);
+    int col = distance_left_col > distance_right_col ? left_col : right_col;
+    int mirrored_col = width - 1 - col;
+    if (mirrored_col > col) {
+        for (; col < mirrored_col; ++col, --mirrored_col) {
+            for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+                int my_cell = row * width * 3 + col * 3;
+                int mirrored_cell = row * width * 3 + mirrored_col * 3;
+                unsigned char temp_1 = buffer_frame[my_cell];
+                unsigned char temp_2 = buffer_frame[my_cell + 1];
+                unsigned char temp_3 = buffer_frame[my_cell + 2];
+                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
+                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
+                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
+                buffer_frame[mirrored_cell] = temp_1;
+                buffer_frame[mirrored_cell + 1] = temp_2;
+                buffer_frame[mirrored_cell + 2] = temp_3;
+            }
         }
     }
+    else if (mirrored_col < col) {
+        for (; col > mirrored_col; --col, ++mirrored_col) {
+            for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+                int my_cell = row * width * 3 + col * 3;
+                int mirrored_cell = row * width * 3 + mirrored_col * 3;
+                unsigned char temp_1 = buffer_frame[my_cell];
+                unsigned char temp_2 = buffer_frame[my_cell + 1];
+                unsigned char temp_3 = buffer_frame[my_cell + 2];
+                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
+                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
+                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
+                buffer_frame[mirrored_cell] = temp_1;
+                buffer_frame[mirrored_cell + 1] = temp_2;
+                buffer_frame[mirrored_cell + 2] = temp_3;
+            }
+        }
+    }
+    else {
+        return;
+    }
+    // printf("col %d\n", col);
+    // printf("mirrored_col %d\n", mirrored_col);
+    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+    //     for (int col = left_col; col <= right_col; ++col) {
+    //         int my_cell = row * width * 3 + col * 3;
+    //         int mirrored_cell = row * width * 3 + (width - 1 - col) * 3;
+    //         unsigned char temp_1 = buffer_frame[my_cell];
+    //         unsigned char temp_2 = buffer_frame[my_cell + 1];
+    //         unsigned char temp_3 = buffer_frame[my_cell + 2];
+    //         buffer_frame[my_cell] = buffer_frame[mirrored_cell];
+    //         buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
+    //         buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
+    //         buffer_frame[mirrored_cell] = temp_1;
+    //         buffer_frame[mirrored_cell + 1] = temp_2;
+    //         buffer_frame[mirrored_cell + 2] = temp_3;
+    //     }
+    // }
+    int temp = top_left[1];
+    top_left[1] = top_right[1] + (y_axis - top_right[1]) * 2;
+    bottom_left[1] = top_left[1];
+    top_right[1] = temp + (y_axis - temp) * 2;
+    bottom_right[1] = top_right[1];
+    // int old_left = top_left[1];
+    // top_left[1] = width - 1 - top_right[1];
+    // bottom_left[1] = top_left[1];
+    // top_right[1] = width - 1 - old_left;
+    // bottom_right[1] = top_right[1];
+    return;
+}
+
+void processRotateCW1(unsigned char *buffer_frame, unsigned width, unsigned height) {
+    // transpose the image
+    // for (int row = 0; row < height; ++row) {
+    //     for (int col = row + 1; col < width; ++col) {
+    //         int row_col = row * width * 3 + col * 3;
+    //         int col_row = col * width * 3 + row * 3;
+    //         unsigned char temp_1 = buffer_frame[row_col];
+    //         unsigned char temp_2 = buffer_frame[row_col + 1];
+    //         unsigned char temp_3 = buffer_frame[row_col + 2];
+    //         buffer_frame[row_col] = buffer_frame[col_row];
+    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
+    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
+    //         buffer_frame[col_row] = temp_1;
+    //         buffer_frame[col_row + 1] = temp_2;
+    //         buffer_frame[col_row + 2] = temp_3;
+    //     }
+    // }
+    
+
+    // printBMP(width, height, buffer_frame);
+    int net_col = top_right[1] - top_left[1] + 1;
+    int net_row = bottom_left[0] - top_left[0] + 1;
+    // transpose the image
+    for (int row = 0; row < height; ++row) {
+        for (int col = row + 1; col < width; ++col) {
+            int row_col = row * width * 3 + col * 3;
+            int col_row = col * width * 3 + row * 3;
+            unsigned char temp_1 = buffer_frame[row_col];
+            unsigned char temp_2 = buffer_frame[row_col + 1];
+            unsigned char temp_3 = buffer_frame[row_col + 2];
+            buffer_frame[row_col] = buffer_frame[col_row];
+            buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
+            buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
+            buffer_frame[col_row] = temp_1;
+            buffer_frame[col_row + 1] = temp_2;
+            buffer_frame[col_row + 2] = temp_3;
+        }
+    }
+    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+    //     for (int col = row + 1; col <= top_right[1]; ++col) {
+    //         int row_col = row * width * 3 + col * 3;
+    //         int col_row = col * width * 3 + row * 3;
+    //         unsigned char temp_1 = buffer_frame[row_col];
+    //         unsigned char temp_2 = buffer_frame[row_col + 1];
+    //         unsigned char temp_3 = buffer_frame[row_col + 2];
+    //         buffer_frame[row_col] = buffer_frame[col_row];
+    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
+    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
+    //         buffer_frame[col_row] = temp_1;
+    //         buffer_frame[col_row + 1] = temp_2;
+    //         buffer_frame[col_row + 2] = temp_3;
+    //     }
+    // }
+
+    // top_left -> top_left 
+    // top_right -> bottom_left 
+    // bottom_left -> top_right 
+    // bottom_right -> bottom_right
+    int temp;
+    // top_left
+    temp = top_left[0];
+    top_left[0] = top_left[1];
+    top_left[1] = temp;
+
+    // bottom_right
+    temp = bottom_right[0];
+    bottom_right[0] = bottom_right[1];
+    bottom_right[1] = temp;
+
+    // top_right
+    temp = top_right[0];
+    top_right[0] = top_right[1];
+    top_right[1] = temp;
+
+    // bottom_left
+    temp = bottom_left[0];
+    bottom_left[0] = bottom_left[1];
+    bottom_left[1] = temp;
+
+    // swap top_right bottom_left
+    int temp1 = top_right[0];
+    int temp2 = top_right[1];
+    top_right[0] = bottom_left[0];
+    top_right[1] = bottom_left[1];
+    bottom_left[0] = temp1;
+    bottom_left[1] = temp2;
+    // bottom_left[0] = top_left[0] + net_col;
+    // bottom_right[0] = bottom_left[0];
+    // bottom_right[1] = top_right[1];
+    // print_bounds();
+
+    // // reflect on y axis
+    // for (int row = 0; row < height; ++row) {
+    //     int left = 0;
+    //     int right = width - 1;
+    //     int row_cell = row * width * 3;
+    //     for(; left < right; ++left, --right) {
+    //         int row_cell_left = row_cell + left * 3;
+    //         int row_cell_right = row_cell + right * 3;
+    //         unsigned char temp_1 = buffer_frame[row_cell_left];
+    //         unsigned char temp_2 = buffer_frame[row_cell_left + 1];
+    //         unsigned char temp_3 = buffer_frame[row_cell_left + 2];
+    //         buffer_frame[row_cell_left] = buffer_frame[row_cell_right];
+    //         buffer_frame[row_cell_left + 1] = buffer_frame[row_cell_right + 1];
+    //         buffer_frame[row_cell_left + 2] = buffer_frame[row_cell_right + 2];
+    //         buffer_frame[row_cell_right] = temp_1;
+    //         buffer_frame[row_cell_right + 1] = temp_2;
+    //         buffer_frame[row_cell_right + 2] = temp_3;
+    //     }
+    // }
+    processMirrorY(buffer_frame, width, height);
+    // printBMP(width, height, buffer_frame);
+    return;
+}
+
+void processRotateCW2(unsigned char *buffer_frame, unsigned width, unsigned height) {
+    processMirrorX(buffer_frame, width, height);
+    processMirrorY(buffer_frame, width, height);
+    return;
 }
 
 void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned height) {
@@ -205,51 +511,55 @@ void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned heig
             buffer_frame[col_row + 2] = temp_3;
         }
     }
+    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+    //     for (int col = row + 1; col <= top_right[1]; ++col) {
+    //         int row_col = row * width * 3 + col * 3;
+    //         int col_row = col * width * 3 + row * 3;
+    //         unsigned char temp_1 = buffer_frame[row_col];
+    //         unsigned char temp_2 = buffer_frame[row_col + 1];
+    //         unsigned char temp_3 = buffer_frame[row_col + 2];
+    //         buffer_frame[row_col] = buffer_frame[col_row];
+    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
+    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
+    //         buffer_frame[col_row] = temp_1;
+    //         buffer_frame[col_row + 1] = temp_2;
+    //         buffer_frame[col_row + 2] = temp_3;
+    //     }
+    // }
+
+    // top_left -> top_left 
+    // top_right -> bottom_left 
+    // bottom_left -> top_right 
+    // bottom_right -> bottom_right
+    int temp;
+    // top_left
+    temp = top_left[0];
+    top_left[0] = top_left[1];
+    top_left[1] = temp;
+
+    // bottom_right
+    temp = bottom_right[0];
+    bottom_right[0] = bottom_right[1];
+    bottom_right[1] = temp;
+
+    // top_right
+    temp = top_right[0];
+    top_right[0] = top_right[1];
+    top_right[1] = temp;
+
+    // bottom_left
+    temp = bottom_left[0];
+    bottom_left[0] = bottom_left[1];
+    bottom_left[1] = temp;
+
+    // swap top_right bottom_left
+    int temp1 = top_right[0];
+    int temp2 = top_right[1];
+    top_right[0] = bottom_left[0];
+    top_right[1] = bottom_left[1];
+    bottom_left[0] = temp1;
+    bottom_left[1] = temp2;
     processMirrorX(buffer_frame, width, height);
-}
-
-void processRotateCW2(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    processMirrorX(buffer_frame, width, height);
-    processMirrorY(buffer_frame, width, height);
-}
-
-
-void processRotateCW1(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    // transpose the image
-    for (int row = 0; row < height; ++row) {
-        for (int col = row + 1; col < width; ++col) {
-            int row_col = row * width * 3 + col * 3;
-            int col_row = col * width * 3 + row * 3;
-            unsigned char temp_1 = buffer_frame[row_col];
-            unsigned char temp_2 = buffer_frame[row_col + 1];
-            unsigned char temp_3 = buffer_frame[row_col + 2];
-            buffer_frame[row_col] = buffer_frame[col_row];
-            buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-            buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-            buffer_frame[col_row] = temp_1;
-            buffer_frame[col_row + 1] = temp_2;
-            buffer_frame[col_row + 2] = temp_3;
-        }
-    }
-    // reflect on y axis
-    for (int row = 0; row < height; ++row) {
-        int left = 0;
-        int right = width - 1;
-        int row_cell = row * width * 3;
-        for(; left < right; ++left, --right) {
-            int row_cell_left = row_cell + left * 3;
-            int row_cell_right = row_cell + right * 3;
-            unsigned char temp_1 = buffer_frame[row_cell_left];
-            unsigned char temp_2 = buffer_frame[row_cell_left + 1];
-            unsigned char temp_3 = buffer_frame[row_cell_left + 2];
-            buffer_frame[row_cell_left] = buffer_frame[row_cell_right];
-            buffer_frame[row_cell_left + 1] = buffer_frame[row_cell_right + 1];
-            buffer_frame[row_cell_left + 2] = buffer_frame[row_cell_right + 2];
-            buffer_frame[row_cell_right] = temp_1;
-            buffer_frame[row_cell_right + 1] = temp_2;
-            buffer_frame[row_cell_right + 2] = temp_3;
-        }
-    }
     return;
 }
 
@@ -320,6 +630,12 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     int net_rotate = 0;
     int net_mirror_x = 0;
     int net_mirror_y = 0;
+    set_image_bounds(frame_buffer, width, height);
+    // printf("WIDTH: %d\n", width);
+    // printf("top_left: %d %d\n", top_left[0], top_left[1]);
+    // printf("top_right: %d %d\n", top_right[0], top_right[1]);
+    // printf("bot_left: %d %d\n", bottom_left[0], bottom_left[1]);
+    // printf("bot_right: %d %d\n", bottom_right[0], bottom_right[1]);
     for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx++) {
 //        printf("Processing sensor value #%d: %s, %d\n", sensorValueIdx, sensor_values[sensorValueIdx].key,
 //               sensor_values[sensorValueIdx].value);

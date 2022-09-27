@@ -397,7 +397,6 @@ void implementation_driver_reference(struct kv *sensor_values, int sensor_values
             recordFrame(frame_buffer, width, height, grading_mode);
         }
         
-        
     }
     return;
 }

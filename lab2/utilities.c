@@ -75,6 +75,10 @@ void verifyFrame(unsigned char *frame_buffer, unsigned int width, unsigned int h
     } else {
         // verify frame, memcmp returns 0 if buffer is the same, -1 or +1 when buffers are different
         if (memcmp(frame_buffer, recorded_frames[verified_frames_count], width * height * 3)){
+            // printf("Reference frame: \n");
+            // printBMP(width, height, recorded_frames[verified_frames_count]);
+            // printf("Implementation frame: \n");
+            // printBMP(width, height, frame_buffer);
             printf("ERROR: frame #%d is different compared to the reference implementation\n", verified_frames_count);
             exit(-1);
         } else {

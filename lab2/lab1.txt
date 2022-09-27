@@ -8,21 +8,21 @@ Q2. g: 1 0.188
 Q3. O3 is slowest as it enables the heaviest optimizations.
 Q4. -g is the fastest because it just tells gcc to dump debugging info on seg fault or such exceptions.
 Q5. gprof is faster because it just adds instrumentation code that measures the time spent on function calls as well as generates a graph of function calls. However, gcov add instrumentation code that measures the frequency of every statement, and thus has larger overhead and therefore is slower.
-Q6. g: 60640
-    gprof: 60840
-    gcov: 93104
-    O2: 33024
-    O3: 33080
-    Os: 29016
+Q6. g: 2.09
+    gprof: 2.1 
+    gcov: 3.21 
+    O2: 1.14 
+    O3: 1.14 
+    Os: 1
 Q7. Os is the smallest because the purpose of the -Os flag is to optimize the output binary size.
 Q8. gcov is the largest because is needs to add a bunch of instrumentation code for measurements of each statement.
 Q9. gprof is smaller because it just adds instrumentation code per function, while gcov adds instrumentation code per statement.
-Q10. g: 48.08
-     gprof: 1 57.35
-     gcov: 1.06 54.04
-     O2: 3.63 15.78
-     O3: 3.64 15.75
-     Os: 3.19 17.96
+Q10. g: 1.19
+     gprof: 1
+     gcov: 1.06
+     O2: 3.63
+     O3: 3.64
+     Os: 3.19
 Q11. gprof is the slowest because it does not enable any optimizations and additionaly, runs instrumentation code.
 Q12. O3 is the fastest because it has the most performance optimizations.
 Q13. gprof is slower because it uses OS interrupts to calculate time measurements, and trapping into the kernel is slow.

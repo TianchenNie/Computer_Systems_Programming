@@ -24,6 +24,7 @@ static int top_left[2];
 static int bottom_left[2];
 static int top_right[2];
 static int bottom_right[2];
+static int found_image;
 
 void print_bounds() {
     printf("top_left row col (%d, %d)\n", top_left[0], top_left[1]);
@@ -38,6 +39,7 @@ void set_image_bounds(unsigned char *buffer_frame, unsigned width, unsigned heig
     int bot_row = -1;
     int right_col = -1;
     size_t s = sizeof(int);
+    int found = 0;
     for (int row = 0; row < height; ++row) {
         for (int col = 0; col < width; ++col) {
             int cell = row * width * 3 + col * 3;
@@ -51,17 +53,32 @@ void set_image_bounds(unsigned char *buffer_frame, unsigned width, unsigned heig
                 left_col = min(col, left_col);
                 bot_row = max(row, bot_row);
                 right_col = max(col, right_col);
+                found = 1;
             }
         }
     }
-    top_left[0] = top_row;
-    top_left[1] = left_col;
-    bottom_left[0] = bot_row;
-    bottom_left[1] = left_col;
-    top_right[0] = top_row;
-    top_right[1] = right_col;
-    bottom_right[0] = bot_row;
-    bottom_right[1] = right_col;
+    if (found) {
+        top_left[0] = top_row;
+        top_left[1] = left_col;
+        bottom_left[0] = bot_row;
+        bottom_left[1] = left_col;
+        top_right[0] = top_row;
+        top_right[1] = right_col;
+        bottom_right[0] = bot_row;
+        bottom_right[1] = right_col;
+        found_image = 1;
+    }
+    else if (!found) {
+        top_left[0] = 0;
+        top_left[1] = 0;
+        bottom_left[0] = 0;
+        bottom_left[1] = 0;
+        top_right[0] = 0;
+        top_right[1] = 0;
+        bottom_right[0] = 0;
+        bottom_right[1] = 0;
+        found_image = 0;
+    }
 }
 
 /***********************************************************************************************************************
@@ -374,7 +391,12 @@ void processMirrorY(unsigned char *buffer_frame, unsigned width, unsigned height
 }
 
 void processRotateCW1(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    // transpose the image
+    // printBMP(width, height, buffer_frame);
+    int net_col = top_right[1] - top_left[1] + 1;
+    int net_row = bottom_left[0] - top_left[0] + 1;
+    // printf("NET COL: %d\n", net_col);
+    // printf("NET ROW: %d\n", net_row);
+    // // transpose the image
     // for (int row = 0; row < height; ++row) {
     //     for (int col = row + 1; col < width; ++col) {
     //         int row_col = row * width * 3 + col * 3;
@@ -390,43 +412,24 @@ void processRotateCW1(unsigned char *buffer_frame, unsigned width, unsigned heig
     //         buffer_frame[col_row + 2] = temp_3;
     //     }
     // }
-    
-
-    // printBMP(width, height, buffer_frame);
-    int net_col = top_right[1] - top_left[1] + 1;
-    int net_row = bottom_left[0] - top_left[0] + 1;
-    // transpose the image
-    for (int row = 0; row < height; ++row) {
-        for (int col = row + 1; col < width; ++col) {
+    // printf("Before loop!");
+    unsigned char *transpose = allocateFrame(net_row, net_col);
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_left[1]; col <= top_right[1]; ++col) {
             int row_col = row * width * 3 + col * 3;
-            int col_row = col * width * 3 + row * 3;
-            unsigned char temp_1 = buffer_frame[row_col];
-            unsigned char temp_2 = buffer_frame[row_col + 1];
-            unsigned char temp_3 = buffer_frame[row_col + 2];
-            buffer_frame[row_col] = buffer_frame[col_row];
-            buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-            buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-            buffer_frame[col_row] = temp_1;
-            buffer_frame[col_row + 1] = temp_2;
-            buffer_frame[col_row + 2] = temp_3;
+            int col_row = (col - top_left[1]) * net_row * 3 + (row - top_left[0]) * 3;
+            // printf("COL ROW: %d\n", col_row);
+            transpose[col_row] = buffer_frame[row_col];
+            transpose[col_row + 1] = buffer_frame[row_col + 1];
+            transpose[col_row + 2] = buffer_frame[row_col + 2];
+            buffer_frame[row_col] = 255;
+            buffer_frame[row_col + 1] = 255;
+            buffer_frame[row_col + 2] = 255;
         }
     }
-    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-    //     for (int col = row + 1; col <= top_right[1]; ++col) {
-    //         int row_col = row * width * 3 + col * 3;
-    //         int col_row = col * width * 3 + row * 3;
-    //         unsigned char temp_1 = buffer_frame[row_col];
-    //         unsigned char temp_2 = buffer_frame[row_col + 1];
-    //         unsigned char temp_3 = buffer_frame[row_col + 2];
-    //         buffer_frame[row_col] = buffer_frame[col_row];
-    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-    //         buffer_frame[col_row] = temp_1;
-    //         buffer_frame[col_row + 1] = temp_2;
-    //         buffer_frame[col_row + 2] = temp_3;
-    //     }
-    // }
-
+    // printf("NET COL: %d\n", net_col);
+    // printf("NET ROW: %d\n", net_row);
+    // printf("Done first loop!");
     // top_left -> top_left 
     // top_right -> bottom_left 
     // bottom_left -> top_right 
@@ -459,6 +462,35 @@ void processRotateCW1(unsigned char *buffer_frame, unsigned width, unsigned heig
     top_right[1] = bottom_left[1];
     bottom_left[0] = temp1;
     bottom_left[1] = temp2;
+
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_left[1]; col <= top_right[1]; ++col) {
+            int cell = row * width * 3 + col * 3;
+            int r = row - top_left[0];
+            int c = col - top_left[1];
+            int tcell = r * net_row * 3 + c * 3;
+            buffer_frame[cell] = transpose[tcell];
+            buffer_frame[cell + 1] = transpose[tcell + 1];
+            buffer_frame[cell + 2] = transpose[tcell + 2];
+        }
+    }
+    deallocateFrame(transpose);
+    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+    //     for (int col = row + 1; col <= top_right[1]; ++col) {
+    //         int row_col = row * width * 3 + col * 3;
+    //         int col_row = col * width * 3 + row * 3;
+    //         unsigned char temp_1 = buffer_frame[row_col];
+    //         unsigned char temp_2 = buffer_frame[row_col + 1];
+    //         unsigned char temp_3 = buffer_frame[row_col + 2];
+    //         buffer_frame[row_col] = buffer_frame[col_row];
+    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
+    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
+    //         buffer_frame[col_row] = temp_1;
+    //         buffer_frame[col_row + 1] = temp_2;
+    //         buffer_frame[col_row + 2] = temp_3;
+    //     }
+    // }
+
     // bottom_left[0] = top_left[0] + net_col;
     // bottom_right[0] = bottom_left[0];
     // bottom_right[1] = top_right[1];
@@ -495,24 +527,14 @@ void processRotateCW2(unsigned char *buffer_frame, unsigned width, unsigned heig
 }
 
 void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    // transpose the image
-    for (int row = 0; row < height; ++row) {
-        for (int col = row + 1; col < width; ++col) {
-            int row_col = row * width * 3 + col * 3;
-            int col_row = col * width * 3 + row * 3;
-            unsigned char temp_1 = buffer_frame[row_col];
-            unsigned char temp_2 = buffer_frame[row_col + 1];
-            unsigned char temp_3 = buffer_frame[row_col + 2];
-            buffer_frame[row_col] = buffer_frame[col_row];
-            buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-            buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-            buffer_frame[col_row] = temp_1;
-            buffer_frame[col_row + 1] = temp_2;
-            buffer_frame[col_row + 2] = temp_3;
-        }
-    }
-    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-    //     for (int col = row + 1; col <= top_right[1]; ++col) {
+    // printBMP(width, height, buffer_frame);
+    int net_col = top_right[1] - top_left[1] + 1;
+    int net_row = bottom_left[0] - top_left[0] + 1;
+    // printf("NET COL: %d\n", net_col);
+    // printf("NET ROW: %d\n", net_row);
+    // // transpose the image
+    // for (int row = 0; row < height; ++row) {
+    //     for (int col = row + 1; col < width; ++col) {
     //         int row_col = row * width * 3 + col * 3;
     //         int col_row = col * width * 3 + row * 3;
     //         unsigned char temp_1 = buffer_frame[row_col];
@@ -526,7 +548,24 @@ void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned heig
     //         buffer_frame[col_row + 2] = temp_3;
     //     }
     // }
-
+    // printf("Before loop!");
+    unsigned char *transpose = allocateFrame(net_row, net_col);
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_left[1]; col <= top_right[1]; ++col) {
+            int row_col = row * width * 3 + col * 3;
+            int col_row = (col - top_left[1]) * net_row * 3 + (row - top_left[0]) * 3;
+            // printf("COL ROW: %d\n", col_row);
+            transpose[col_row] = buffer_frame[row_col];
+            transpose[col_row + 1] = buffer_frame[row_col + 1];
+            transpose[col_row + 2] = buffer_frame[row_col + 2];
+            buffer_frame[row_col] = 255;
+            buffer_frame[row_col + 1] = 255;
+            buffer_frame[row_col + 2] = 255;
+        }
+    }
+    // printf("NET COL: %d\n", net_col);
+    // printf("NET ROW: %d\n", net_row);
+    // printf("Done first loop!");
     // top_left -> top_left 
     // top_right -> bottom_left 
     // bottom_left -> top_right 
@@ -559,6 +598,19 @@ void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned heig
     top_right[1] = bottom_left[1];
     bottom_left[0] = temp1;
     bottom_left[1] = temp2;
+
+    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
+        for (int col = top_left[1]; col <= top_right[1]; ++col) {
+            int cell = row * width * 3 + col * 3;
+            int r = row - top_left[0];
+            int c = col - top_left[1];
+            int tcell = r * net_row * 3 + c * 3;
+            buffer_frame[cell] = transpose[tcell];
+            buffer_frame[cell + 1] = transpose[tcell + 1];
+            buffer_frame[cell + 2] = transpose[tcell + 2];
+        }
+    }
+    deallocateFrame(transpose);
     processMirrorX(buffer_frame, width, height);
     return;
 }
@@ -631,6 +683,12 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     int net_mirror_x = 0;
     int net_mirror_y = 0;
     set_image_bounds(frame_buffer, width, height);
+    if (!found_image) {
+        for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx += 25) {
+             verifyFrame(frame_buffer, width, height, grading_mode);
+        }
+        return;
+    }
     // printf("WIDTH: %d\n", width);
     // printf("top_left: %d %d\n", top_left[0], top_left[1]);
     // printf("top_right: %d %d\n", top_right[0], top_right[1]);

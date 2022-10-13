@@ -676,34 +676,228 @@ unsigned char *get_frame_from_vertices() {
         // printf("ABCD!!!!!\n");
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= bottom_left_row - top_left_row; i++) {
+        register short int i = 0;
+        register unsigned short int bound = (bottom_left_row - top_left_row) >> 2;
+        bound = bound << 2;
+        register short int width = (top_right_col + 1) * 3 - top_left_col * 3;
+        for (; i < bound; i += 4) {
             memcpy(&new_frame[(top_left_row + i) * g_width * 3 + top_left_col * 3], 
                 &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
-                (top_right_col + 1) * 3 - top_left_col * 3);
+                width);
+            memcpy(&new_frame[(top_left_row + i + 1) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i + 1) * g_width * 3 + initial_top_left_col * 3],
+                width);
+            memcpy(&new_frame[(top_left_row + i + 2) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i + 2) * g_width * 3 + initial_top_left_col * 3],
+                width);
+            memcpy(&new_frame[(top_left_row + i + 3) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i + 3) * g_width * 3 + initial_top_left_col * 3],
+                width);
+        }
+        for (; i <= bottom_left_row - top_left_row; i++) {
+            memcpy(&new_frame[(top_left_row + i) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
+                width);
         }
         // printBMP(g_width, g_width, new_frame);
         return new_frame;
     }
     else if (ACBD()) { // needs testing
-        // printf("ACBD!!!!\n");
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
-                int dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i) * 3;
+        register short int i = 0;
+        register short int j = 0;
+        register unsigned short int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+        bound_i = bound_i << 2;
+        register unsigned short int bound_j = (initial_top_right_col - initial_top_left_col) >> 2;
+        bound_j = bound_j << 2;
+        register int initial_pixel_addr;
+        register int dest_pixel_addr;
+        for (; i < bound_i; i += 4) {
+            for (j = 0; j <= bound_j; j += 4) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i + 1) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i + 2) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i + 3) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 1
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_left_col + i + 1) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_left_col + i + 2) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_left_col + i + 3) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 2
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_left_col + i + 1) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_left_col + i + 2) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_left_col + i + 3) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 3
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_left_col + i + 1) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_left_col + i + 2) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_left_col + i + 3) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+            for (; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i + 1) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i + 2) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i + 3) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+
+        for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i) * 3;
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
         return new_frame;
     }
     else if (BADC()) {
+        // printf("BADC!!!!");
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
-                int dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - j) * 3;
+        register short int i = 0;
+        register short int j = 0;
+        register unsigned short int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+        bound_i = bound_i << 2;
+        register unsigned short int bound_j = (initial_top_right_col - initial_top_left_col) >> 2;
+        bound_j = bound_j << 2;
+        register int initial_pixel_addr;
+        register int dest_pixel_addr;
+        for (; i < bound_i; i += 4) {
+            for (j = 0; j < bound_j; j += 4) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i + 1) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i + 2) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i + 3) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 1
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (top_left_row + i + 1) * g_width * 3 + (top_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (top_left_row + i + 2) * g_width * 3 + (top_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (top_left_row + i + 3) * g_width * 3 + (top_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 2
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (top_left_row + i + 1) * g_width * 3 + (top_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (top_left_row + i + 2) * g_width * 3 + (top_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (top_left_row + i + 3) * g_width * 3 + (top_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 3
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (top_left_row + i + 1) * g_width * 3 + (top_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (top_left_row + i + 2) * g_width * 3 + (top_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (top_left_row + i + 3) * g_width * 3 + (top_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+            for (; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 1) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i + 1) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 2) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i + 2) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + i + 3) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i + 3) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - j) * 3;
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
@@ -712,10 +906,90 @@ unsigned char *get_frame_from_vertices() {
     else if (CADB()) { // rotate CW1
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
-                int dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - i) * 3;
+        register short int i = 0;
+        register short int j = 0;
+        register unsigned short int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+        bound_i = bound_i << 2;
+        register unsigned short int bound_j = (initial_top_right_col - initial_top_left_col) >> 2;
+        bound_j = bound_j << 2;
+        register int initial_pixel_addr;
+        register int dest_pixel_addr;
+        for (; i < bound_i; i += 4) {
+            for (j = 0; j < bound_j; j += 4) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 1
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j + 1) * 3;
+                dest_pixel_addr = (top_left_row + j + 1) * g_width * 3 + (top_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 2
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j + 2) * 3;
+                dest_pixel_addr = (top_left_row + j + 2) * g_width * 3 + (top_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+
+                // unroll j 3
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j + 3) * 3;
+                dest_pixel_addr = (top_left_row + j + 3) * g_width * 3 + (top_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+            for (; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - i) * 3;
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
@@ -724,10 +998,87 @@ unsigned char *get_frame_from_vertices() {
     else if (DBCA()) {
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
-                int dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - i) * 3;
+        register short int i = 0;
+        register short int j = 0;
+        register unsigned short int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+        bound_i = bound_i << 2;
+        register unsigned short int bound_j = (initial_top_right_col - initial_top_left_col) >> 2;
+        bound_j = bound_j << 2;
+        register int initial_pixel_addr;
+        register int dest_pixel_addr;
+        for (; i < bound_i; i += 4) {
+            for (j = 0; j < bound_j; j += 4) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                // unroll j 1
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                // unroll j 2
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                // unroll j 3
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+            for (; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - i) * 3;
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
@@ -736,32 +1087,209 @@ unsigned char *get_frame_from_vertices() {
     else if (DCBA()) {
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
-                int dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - j) * 3;
+        register short int i = 0;
+        register short int j = 0;
+        register unsigned short int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+        bound_i = bound_i << 2;
+        register unsigned short int bound_j = (initial_top_right_col - initial_top_left_col) >> 2;
+        bound_j = bound_j << 2;
+        register int initial_pixel_addr;
+        register int dest_pixel_addr;
+        for (; i < bound_i; i += 4) {
+            for (j = 0; j < bound_j; j += 4) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 1)) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 2)) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 3)) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                // unroll j 1
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 1)) * g_width * 3 + (bottom_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 2)) * g_width * 3 + (bottom_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 3)) * g_width * 3 + (bottom_right_col - (j + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                // unroll j 2
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 1)) * g_width * 3 + (bottom_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 2)) * g_width * 3 + (bottom_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 3)) * g_width * 3 + (bottom_right_col - (j + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                // unroll j 3
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 1)) * g_width * 3 + (bottom_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 2)) * g_width * 3 + (bottom_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 3)) * g_width * 3 + (bottom_right_col - (j + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+            for (; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 1)) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 2)) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - (i + 3)) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - j) * 3;
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
         return new_frame;
     }
-    else if (CDAB()) {
+    else if (CDAB()) {        
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= bottom_left_row - top_left_row; i++) {
+        register short int i = 0;
+        register unsigned short int bound = (bottom_left_row - top_left_row) >> 2;
+        bound = bound << 2;
+        register short int width = (top_right_col + 1) * 3 - top_left_col * 3;
+        for (; i < bound; i += 4) {
+            // printf("i: %d\n", i);
             memcpy(&new_frame[(bottom_left_row - i) * g_width * 3 + top_left_col * 3], 
                 &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
-                (top_right_col + 1) * 3 - top_left_col * 3);
+                width);
+            memcpy(&new_frame[(bottom_left_row - i - 1) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i + 1) * g_width * 3 + initial_top_left_col * 3],
+                width);
+            memcpy(&new_frame[(bottom_left_row - i - 2) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i + 2) * g_width * 3 + initial_top_left_col * 3],
+                width);
+            memcpy(&new_frame[(bottom_left_row - i - 3) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i + 3) * g_width * 3 + initial_top_left_col * 3],
+                width);
+        }
+        for (; i <= bottom_left_row - top_left_row; i++) {
+            // printf("NEW LOOP i: %d\n", i);
+            memcpy(&new_frame[(bottom_left_row - i) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
+                width);
         }
         return new_frame;
     }
     else if (BDAC()) {
         unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
-        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
-                int dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + i) * 3;
+        register short int i = 0;
+        register short int j = 0;
+        register unsigned short int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+        bound_i = bound_i << 2;
+        register unsigned short int bound_j = (initial_top_right_col - initial_top_left_col) >> 2;
+        bound_j = bound_j << 2;
+        register int initial_pixel_addr;
+        register int dest_pixel_addr;
+        for (; i < bound_i; i += 4) {
+            for (j = 0; j < bound_j; j += 4) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                // unroll j 1                
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_left_col + (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_left_col + (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 1)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 1)) * g_width * 3 + (bottom_left_col + (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                // unroll j 2
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_left_col + (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_left_col + (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 2)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 2)) * g_width * 3 + (bottom_left_col + (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                
+                // unroll j 3
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_left_col + (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_left_col + (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + (j + 3)) * 3;
+                dest_pixel_addr = (bottom_left_row - (j + 3)) * g_width * 3 + (bottom_left_col + (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+            for (; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 1)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + (i + 1)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 2)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + (i + 2)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+                initial_pixel_addr = (initial_top_left_row + (i + 3)) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + (i + 3)) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + i) * 3;
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }

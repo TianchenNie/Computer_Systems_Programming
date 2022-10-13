@@ -4,45 +4,285 @@
 #include "utilities.h"  // DO NOT REMOVE this line
 #include "implementation_reference.h"   // DO NOT REMOVE this line
 
+#pragma GCC target ("avx,avx2")
+#pragma __attribute__((always_inline))
 
 #define min(_a,_b) (((_a) < (_b)) ? (_a) : (_b))
 #define max(_a,_b) (((_a) > (_b)) ? (_a) : (_b))
 #define abs(_a) (((_a) >= 0) ? (_a) : (-1*(_a)))
+#define abcd 1
+#define acbd 2
+#define badc 3
+#define cadb 4
+#define dbca 5
+#define dcba 6
+#define cdab 7
+#define bdac 8
+
+static unsigned int g_width = 0;
+
 
 // TODO: find a way to accumulate rotates, shifts, and mirrors. Currently the problem
 // is that rotate then mirror != mirror then rotate && shift then mirror != mirror then shift
 // TODO: cache the top left bottom right bounds of image of interest, right now rotating/looping through
 // background which is unnecessary
 // TODO: find a way to do loop unrolling
-void processMoveUp(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
-void processMoveDown(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
-void processMoveLeft(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
-void processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned height, int offset);
 
 /* [row, col] */
-static int top_left[2];
-static int bottom_left[2];
-static int top_right[2];
-static int bottom_right[2];
-static int found_image;
+static unsigned char *initial_buffer;
+static short int top_left_row;
+static short int top_left_col;
+static short int bottom_left_row;
+static short int bottom_left_col;
+static short int top_right_row;
+static short int top_right_col;
+static short int bottom_right_row;
+static short int bottom_right_col;
+static short int initial_top_left_row;
+static short int initial_top_left_col;
+static short int initial_bottom_left_row;
+static short int initial_bottom_left_col;
+static short int initial_top_right_row;
+static short int initial_top_right_col;
+static short int initial_bottom_right_row;
+static short int initial_bottom_right_col;
+static short int a_row;
+static short int a_col;
+static short int b_row;
+static short int b_col;
+static short int c_row;
+static short int c_col;
+static short int d_row;
+static short int d_col;
+static short int found_image;
 
-void print_bounds() {
-    printf("top_left row col (%d, %d)\n", top_left[0], top_left[1]);
-    printf("bottom_left row col (%d, %d)\n", bottom_left[0], bottom_left[1]);
-    printf("top_right row col (%d, %d)\n", top_right[0], top_right[1]);
-    printf("bottom_right row col (%d, %d)\n", bottom_right[0], bottom_right[1]);
+// void print_bounds() {
+//     printf("top_left row col (%d, %d)\n", top_left_row, top_left_col);
+//     printf("bottom_left row col (%d, %d)\n", bottom_left_row, bottom_left_col);
+//     printf("top_right row col (%d, %d)\n", top_right_row, top_right_col);
+//     printf("bottom_right row col (%d, %d)\n", bottom_right_row, bottom_right_col);
+// }
+
+// void print_abcd() {
+//     printf("a row col (%d, %d)\n", a_row, a_col);
+//     printf("b row col (%d, %d)\n", b_row, b_col);
+//     printf("c row col (%d, %d)\n", c_row, c_col);
+//     printf("d row col (%d, %d)\n", d_row, d_col);
+// }
+
+static inline __attribute__((always_inline)) void set_initial_vertices() {
+    initial_top_left_row = top_left_row;
+    initial_top_left_col = top_left_col;
+    initial_bottom_left_row = bottom_left_row;
+    initial_bottom_left_col = bottom_left_col;
+    initial_top_right_row = top_right_row;
+    initial_top_right_col = top_right_col;
+    initial_bottom_right_row = bottom_right_row;
+    initial_bottom_right_col = bottom_right_col;
 }
 
-void set_image_bounds(unsigned char *buffer_frame, unsigned width, unsigned height) {
+/*
+case1
+A B
+C D
+*/
+static inline __attribute__((always_inline)) short int ABCD() {
+    return (a_row == top_left_row && a_col == top_left_col &&
+        b_row == top_right_row && b_col == top_right_col && 
+        c_row == bottom_left_row && c_col == bottom_left_col && 
+        d_row == bottom_right_row && d_col == bottom_right_col) ? abcd : 0;
+}
+
+/*
+case2
+A C
+B D
+*/
+static inline __attribute__((always_inline)) short int ACBD() {
+    return (a_row == top_left_row && a_col == top_left_col &&
+        c_row == top_right_row && c_col == top_right_col && 
+        b_row == bottom_left_row && b_col == bottom_left_col && 
+        d_row == bottom_right_row && d_col == bottom_right_col) ? acbd : 0;
+}
+
+/*
+case3
+B A
+D C
+*/
+static inline __attribute__((always_inline)) short int BADC() {
+    return (b_row == top_left_row && b_col == top_left_col &&
+        a_row == top_right_row && a_col == top_right_col && 
+        d_row == bottom_left_row && d_col == bottom_left_col && 
+        c_row == bottom_right_row && c_col == bottom_right_col) ? badc : 0;
+}
+
+/*
+case4
+C A
+D B
+*/
+static inline __attribute__((always_inline)) short int CADB() {
+    return (c_row == top_left_row && c_col == top_left_col &&
+        a_row == top_right_row && a_col == top_right_col && 
+        d_row == bottom_left_row && d_col == bottom_left_col && 
+        b_row == bottom_right_row && b_col == bottom_right_col) ? cadb : 0;
+}
+
+/*
+case5
+D B
+C A
+*/
+static inline __attribute__((always_inline)) short int DBCA() {
+    return (d_row == top_left_row && d_col == top_left_col &&
+        b_row == top_right_row && b_col == top_right_col && 
+        c_row == bottom_left_row && c_col == bottom_left_col && 
+        a_row == bottom_right_row && a_col == bottom_right_col) ? dbca : 0;
+}
+
+/*
+case6
+D C
+B A
+*/
+static inline __attribute__((always_inline)) short int DCBA() {
+    return (d_row == top_left_row && d_col == top_left_col &&
+        c_row == top_right_row && c_col == top_right_col && 
+        b_row == bottom_left_row && b_col == bottom_left_col && 
+        a_row == bottom_right_row && a_col == bottom_right_col) ? dcba : 0;
+}
+
+/*
+case7
+C D
+A B
+*/
+static inline __attribute__((always_inline)) short int CDAB() {
+    return (c_row == top_left_row && c_col == top_left_col &&
+        d_row == top_right_row && d_col == top_right_col && 
+        a_row == bottom_left_row && a_col == bottom_left_col && 
+        b_row == bottom_right_row && b_col == bottom_right_col) ? cdab : 0;
+}
+
+/*
+case8
+B D
+A C
+*/
+static inline __attribute__((always_inline)) short int BDAC() {
+    return (b_row == top_left_row && b_col == top_left_col &&
+        d_row == top_right_row && d_col == top_right_col && 
+        a_row == bottom_left_row && a_col == bottom_left_col && 
+        c_row == bottom_right_row && c_col == bottom_right_col) ? bdac : 0;
+}
+
+/*
+case1
+A B
+C D
+*/
+static inline __attribute__((always_inline)) void assign_ABCD() {
+    a_row = top_left_row; a_col = top_left_col;
+    b_row = top_right_row; b_col = top_right_col;
+    c_row = bottom_left_row; c_col = bottom_left_col; 
+    d_row = bottom_right_row; d_col = bottom_right_col;
+}
+
+/*
+case2
+A C
+B D
+*/
+static inline __attribute__((always_inline)) void assign_ACBD() {
+    a_row = top_left_row; a_col = top_left_col;
+    c_row = top_right_row; c_col = top_right_col;
+    b_row = bottom_left_row; b_col = bottom_left_col; 
+    d_row = bottom_right_row; d_col = bottom_right_col;
+}
+
+/*
+case3
+B A
+D C
+*/
+static inline __attribute__((always_inline)) void assign_BADC() {
+    b_row = top_left_row; b_col = top_left_col;
+    a_row = top_right_row; a_col = top_right_col;
+    d_row = bottom_left_row; d_col = bottom_left_col; 
+    c_row = bottom_right_row; c_col = bottom_right_col;
+}
+
+/*
+case4
+C A
+D B
+*/
+static inline __attribute__((always_inline)) void assign_CADB() {
+    c_row = top_left_row; c_col = top_left_col;
+    a_row = top_right_row; a_col = top_right_col;
+    d_row = bottom_left_row; d_col = bottom_left_col; 
+    b_row = bottom_right_row; b_col = bottom_right_col;
+}
+
+/*
+case5
+D B
+C A
+*/
+static inline __attribute__((always_inline)) void assign_DBCA() {
+    d_row = top_left_row; d_col = top_left_col;
+    b_row = top_right_row; b_col = top_right_col;
+    c_row = bottom_left_row; c_col = bottom_left_col; 
+    a_row = bottom_right_row; a_col = bottom_right_col;
+}
+
+/*
+case6
+D C
+B A
+*/
+static inline __attribute__((always_inline)) void assign_DCBA() {
+    d_row = top_left_row; d_col = top_left_col;
+    c_row = top_right_row; c_col = top_right_col;
+    b_row = bottom_left_row; b_col = bottom_left_col; 
+    a_row = bottom_right_row; a_col = bottom_right_col;
+}
+
+/*
+case7
+C D
+A B
+*/
+static inline __attribute__((always_inline)) void assign_CDAB() {
+    c_row = top_left_row; c_col = top_left_col;
+    d_row = top_right_row; d_col = top_right_col;
+    a_row = bottom_left_row; a_col = bottom_left_col; 
+    b_row = bottom_right_row; b_col = bottom_right_col;
+}
+
+/*
+case8
+B D
+A C
+*/
+static inline __attribute__((always_inline)) void assign_BDAC() {
+    b_row = top_left_row; b_col = top_left_col;
+    d_row = top_right_row; d_col = top_right_col;
+    a_row = bottom_left_row; a_col = bottom_left_col; 
+    c_row = bottom_right_row; c_col = bottom_right_col;
+}
+
+void set_image_bounds(unsigned char *buffer_frame) {
     int top_row = -1;
     int left_col = 1e6;
     int bot_row = -1;
     int right_col = -1;
     size_t s = sizeof(int);
     int found = 0;
-    for (int row = 0; row < height; ++row) {
-        for (int col = 0; col < width; ++col) {
-            int cell = row * width * 3 + col * 3;
+    for (int row = 0; row < g_width; ++row) {
+        for (int col = 0; col < g_width; ++col) {
+            int cell = row * g_width * 3 + col * 3;
             if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
                 // printf("CELL 1: %d\n", buffer_frame[cell]);
                 // printf("CELL 2: %d\n", buffer_frame[cell + 1]);
@@ -58,27 +298,29 @@ void set_image_bounds(unsigned char *buffer_frame, unsigned width, unsigned heig
         }
     }
     if (found) {
-        top_left[0] = top_row;
-        top_left[1] = left_col;
-        bottom_left[0] = bot_row;
-        bottom_left[1] = left_col;
-        top_right[0] = top_row;
-        top_right[1] = right_col;
-        bottom_right[0] = bot_row;
-        bottom_right[1] = right_col;
+        top_left_row = top_row;
+        top_left_col = left_col;
+        bottom_left_row = bot_row;
+        bottom_left_col = left_col;
+        top_right_row = top_row;
+        top_right_col = right_col;
+        bottom_right_row = bot_row;
+        bottom_right_col = right_col;
         found_image = 1;
     }
     else if (!found) {
-        top_left[0] = 0;
-        top_left[1] = 0;
-        bottom_left[0] = 0;
-        bottom_left[1] = 0;
-        top_right[0] = 0;
-        top_right[1] = 0;
-        bottom_right[0] = 0;
-        bottom_right[1] = 0;
+        top_left_row = 0;
+        top_left_col = 0;
+        bottom_left_row = 0;
+        bottom_left_col = 0;
+        top_right_row = 0;
+        top_right_col = 0;
+        bottom_right_row = 0;
+        bottom_right_col = 0;
         found_image = 0;
     }
+    assign_ABCD();
+    set_initial_vertices();
 }
 
 /***********************************************************************************************************************
@@ -90,30 +332,29 @@ void set_image_bounds(unsigned char *buffer_frame, unsigned width, unsigned heig
  * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
  * Note2: You can assume the object will never be moved off the screen
  **********************************************************************************************************************/
-void processMoveUp(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
-    if (offset == 0) return;
-    if (offset < 0) {
-        processMoveDown(buffer_frame, width, height, -offset);
-        return;
-    }
-    int shift = offset * width * 3;
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_left[1]; col <= top_right[1]; ++col) {
-            int cell = row * width * 3 + col * 3;
-            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-                buffer_frame[cell - shift] = buffer_frame[cell];
-                buffer_frame[cell] = 255;
-                buffer_frame[cell + 1 - shift] = buffer_frame[cell + 1];
-                buffer_frame[cell + 1] = 255;
-                buffer_frame[cell + 2 - shift] = buffer_frame[cell + 2];
-                buffer_frame[cell + 2] = 255;
-            }
-        }
-    }
-    top_left[0] -= offset;
-    top_right[0] -= offset;
-    bottom_left[0] -= offset;
-    bottom_right[0] -= offset;
+void processMoveUp(int offset) {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
+    top_left_row -= offset;
+    top_right_row -= offset;
+    bottom_left_row -= offset;
+    bottom_right_row -= offset;
+    if (c == abcd) assign_ABCD();
+    else if (c == acbd) assign_ACBD();
+    else if (c == badc) assign_BADC();
+    else if (c == cadb) assign_CADB();
+    else if (c == dbca) assign_DBCA();
+    else if (c == dcba) assign_DCBA();
+    else if (c == cdab) assign_CDAB();
+    else if (c == bdac) assign_BDAC();
+    // else printf("CASE NOT FOUND!!!! DEBUG PLEASE!!!\n");
     return;
 }
 
@@ -126,30 +367,29 @@ void processMoveUp(unsigned char *buffer_frame, unsigned width, unsigned height,
  * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
  * Note2: You can assume the object will never be moved off the screen
  **********************************************************************************************************************/
-void processMoveDown(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
-    if (offset == 0) return;
-    if (offset < 0) {
-        processMoveUp(buffer_frame, width, height, -offset);
-        return;
-    }
-    int shift = offset * width * 3;
-    for (int row = bottom_left[0]; row >= top_left[0]; --row) {
-        for (int col = bottom_left[1]; col <= bottom_right[1]; ++col) {
-            int cell = row * width * 3 + col * 3;
-            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-                buffer_frame[cell + shift] = buffer_frame[cell];
-                buffer_frame[cell] = 255;
-                buffer_frame[cell + 1 + shift] = buffer_frame[cell + 1];
-                buffer_frame[cell + 1] = 255;
-                buffer_frame[cell + 2 + shift] = buffer_frame[cell + 2];
-                buffer_frame[cell + 2] = 255;
-            }
-        }
-    }
-    top_left[0] += offset;
-    top_right[0] += offset;
-    bottom_left[0] += offset;
-    bottom_right[0] += offset;
+void processMoveDown(int offset) {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
+    top_left_row += offset;
+    top_right_row += offset;
+    bottom_left_row += offset;
+    bottom_right_row += offset;
+    if (c == abcd) assign_ABCD();
+    else if (c == acbd) assign_ACBD();
+    else if (c == badc) assign_BADC();
+    else if (c == cadb) assign_CADB();
+    else if (c == dbca) assign_DBCA();
+    else if (c == dcba) assign_DCBA();
+    else if (c == cdab) assign_CDAB();
+    else if (c == bdac) assign_BDAC();
+    // else printf("CASE NOT FOUND!!!! DEBUG PLEASE!!!\n");
     return;
 }
 
@@ -162,30 +402,29 @@ void processMoveDown(unsigned char *buffer_frame, unsigned width, unsigned heigh
  * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
  * Note2: You can assume the object will never be moved off the screen
  **********************************************************************************************************************/
-void processMoveLeft(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
-    if (offset == 0) return;
-    if (offset < 0) {
-        processMoveRight(buffer_frame, width, height, -offset);
-        return;
-    }
-    int shift = offset * 3;
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_left[1]; col <= top_right[1]; ++col) {
-            int cell = row * width * 3 + col * 3;
-            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-                buffer_frame[cell - shift] = buffer_frame[cell];
-                buffer_frame[cell] = 255;
-                buffer_frame[cell + 1 - shift] = buffer_frame[cell + 1];
-                buffer_frame[cell + 1] = 255;
-                buffer_frame[cell + 2 - shift] = buffer_frame[cell + 2];
-                buffer_frame[cell + 2] = 255;
-            }
-        }
-    }
-    top_left[1] -= offset;
-    top_right[1] -= offset;
-    bottom_left[1] -= offset;
-    bottom_right[1] -= offset;
+void processMoveLeft(int offset) {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
+    top_left_col -= offset;
+    top_right_col -= offset;
+    bottom_left_col -= offset;
+    bottom_right_col -= offset;
+    if (c == abcd) assign_ABCD();
+    else if (c == acbd) assign_ACBD();
+    else if (c == badc) assign_BADC();
+    else if (c == cadb) assign_CADB();
+    else if (c == dbca) assign_DBCA();
+    else if (c == dcba) assign_DCBA();
+    else if (c == cdab) assign_CDAB();
+    else if (c == bdac) assign_BDAC();
+    // else printf("CASE NOT FOUND!!!! DEBUG PLEASE!!!\n");
     return;
 }
 
@@ -198,30 +437,29 @@ void processMoveLeft(unsigned char *buffer_frame, unsigned width, unsigned heigh
  * Note1: White pixels RGB(255,255,255) are treated as background. Object in the image refers to non-white pixels.
  * Note2: You can assume the object will never be moved off the screen
  **********************************************************************************************************************/
-void processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned height, int offset) {
-    if (offset == 0) return;
-    if (offset < 0) {
-        processMoveLeft(buffer_frame, width, height, -offset);
-        return;
-    }
-    int shift = offset * 3;
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_right[1]; col >= top_left[1]; --col) {
-            int cell = row * width * 3 + col * 3;
-            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-                buffer_frame[cell + shift] = buffer_frame[cell];
-                buffer_frame[cell] = 255;
-                buffer_frame[cell + 1 + shift] = buffer_frame[cell + 1];
-                buffer_frame[cell + 1] = 255;
-                buffer_frame[cell + 2 + shift] = buffer_frame[cell + 2];
-                buffer_frame[cell + 2] = 255;
-            }
-        }
-    }
-    top_left[1] += offset;
-    top_right[1] += offset;
-    bottom_left[1] += offset;
-    bottom_right[1] += offset;
+void processMoveRight(int offset) {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
+    top_left_col += offset;
+    top_right_col += offset;
+    bottom_left_col += offset;
+    bottom_right_col += offset;
+    if (c == abcd) assign_ABCD();
+    else if (c == acbd) assign_ACBD();
+    else if (c == badc) assign_BADC();
+    else if (c == cadb) assign_CADB();
+    else if (c == dbca) assign_DBCA();
+    else if (c == dcba) assign_DCBA();
+    else if (c == cdab) assign_CDAB();
+    else if (c == bdac) assign_BDAC();
+    // else printf("CASE NOT FOUND!!!! DEBUG PLEASE!!!\n");
     return;
 }
 
@@ -231,79 +469,31 @@ void processMoveRight(unsigned char *buffer_frame, unsigned width, unsigned heig
  * @param height - height of the imported 24-bit bitmap image
  * @return
  **********************************************************************************************************************/
-void processMirrorX(unsigned char *buffer_frame, unsigned int width, unsigned int height) {
-    int top_row = top_left[0];
-    int bottom_row = bottom_left[0];
-    float x_axis = (height - 1) * 0.5;
-    float distance_top_row = abs(top_row - x_axis);
-    float distance_bot_row = abs(bottom_row - x_axis);
-    int row = distance_bot_row > distance_top_row ? bottom_row : top_row;
-    int mirrored_row = height - 1 - row;
-    if (mirrored_row > row) {
-        // store shifted pixels to temporary buffer
-        for (; row < mirrored_row; ++row, --mirrored_row) {
-            for (int col = top_left[1]; col <= top_right[1]; ++col) {
-                int my_cell = row * width * 3 + col * 3;
-                int mirrored_cell = mirrored_row * width * 3 + col * 3;
-                unsigned char temp_1 = buffer_frame[my_cell];
-                unsigned char temp_2 = buffer_frame[my_cell + 1];
-                unsigned char temp_3 = buffer_frame[my_cell + 2];
-                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
-                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
-                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
-                buffer_frame[mirrored_cell] = temp_1;
-                buffer_frame[mirrored_cell + 1] = temp_2;
-                buffer_frame[mirrored_cell + 2] = temp_3;
-            }
-        }
-    }
-    else if (mirrored_row < row) {
-        // store shifted pixels to temporary buffer
-        for (; row > mirrored_row; --row, ++mirrored_row) {
-            for (int col = top_left[1]; col <= top_right[1]; ++col) {
-                int my_cell = row * width * 3 + col * 3;
-                int mirrored_cell = mirrored_row * width * 3 + col * 3;
-                unsigned char temp_1 = buffer_frame[my_cell];
-                unsigned char temp_2 = buffer_frame[my_cell + 1];
-                unsigned char temp_3 = buffer_frame[my_cell + 2];
-                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
-                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
-                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
-                buffer_frame[mirrored_cell] = temp_1;
-                buffer_frame[mirrored_cell + 1] = temp_2;
-                buffer_frame[mirrored_cell + 2] = temp_3;
-            }
-        }
-    }
-    else {
-        return;
-    }
-    // // store shifted pixels to temporary buffer
-    // for (; row < bottom_row; ++row) {
-    //     for (int col = top_left[1]; col <= top_right[1]; ++col) {
-    //         int my_cell = row * width * 3 + col * 3;
-    //         int mirrored_cell = (height - 1 - row) * width * 3 + col * 3;
-    //         unsigned char temp_1 = buffer_frame[my_cell];
-    //         unsigned char temp_2 = buffer_frame[my_cell + 1];
-    //         unsigned char temp_3 = buffer_frame[my_cell + 2];
-    //         buffer_frame[my_cell] = buffer_frame[mirrored_cell];
-    //         buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
-    //         buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
-    //         buffer_frame[mirrored_cell] = temp_1;
-    //         buffer_frame[mirrored_cell + 1] = temp_2;
-    //         buffer_frame[mirrored_cell + 2] = temp_3;
-    //     }
-    // }
-    int temp = top_left[0];
-    top_left[0] = bottom_left[0] + (x_axis - bottom_left[0]) * 2;
-    top_right[0] = top_left[0];
-    bottom_left[0] = temp + (x_axis - temp) * 2;
-    bottom_right[0] = bottom_left[0];
-    // int old_bottom = bottom_left[0];
-    // bottom_left[0] = height - 1 - top_left[0];
-    // bottom_right[0] = height - 1 - top_left[0];
-    // top_left[0] = height - 1 - old_bottom;
-    // top_right[0] = height - 1 - old_bottom;
+void processMirrorX() {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
+    float x_axis = (g_width - 1) * 0.5;
+    int temp = top_left_row;
+    top_left_row = bottom_left_row + (x_axis - bottom_left_row) * 2;
+    top_right_row = top_left_row;
+    bottom_left_row = temp + (x_axis - temp) * 2;
+    bottom_right_row = bottom_left_row;
+    if (c == abcd) assign_CDAB();
+    else if (c == acbd) assign_BDAC();
+    else if (c == badc) assign_DCBA();
+    else if (c == cadb) assign_DBCA();
+    else if (c == dbca) assign_CADB();
+    else if (c == dcba) assign_BADC();
+    else if (c == cdab) assign_ABCD();
+    else if (c == bdac) assign_ACBD();
+    // else printf("ERROR!!!!!!!!!!!!! UNKNOWN CASE, DEBUG PLEASE\n");
     return;
 }
 
@@ -313,305 +503,144 @@ void processMirrorX(unsigned char *buffer_frame, unsigned int width, unsigned in
  * @param height - height of the imported 24-bit bitmap image
  * @return
  **********************************************************************************************************************/
-void processMirrorY(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    int left_col = top_left[1];
-    int right_col = top_right[1];
-    float y_axis = (width - 1) * 0.5;
-    float distance_left_col = abs(left_col - y_axis);
-    float distance_right_col = abs(right_col - y_axis);
-    // printf("Distance_left_col: %f\n", abs(left_col - y_axis));
-    // printf("Distance_right_col: %f\n", distance_right_col);
-    int col = distance_left_col > distance_right_col ? left_col : right_col;
-    int mirrored_col = width - 1 - col;
-    if (mirrored_col > col) {
-        for (; col < mirrored_col; ++col, --mirrored_col) {
-            for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-                int my_cell = row * width * 3 + col * 3;
-                int mirrored_cell = row * width * 3 + mirrored_col * 3;
-                unsigned char temp_1 = buffer_frame[my_cell];
-                unsigned char temp_2 = buffer_frame[my_cell + 1];
-                unsigned char temp_3 = buffer_frame[my_cell + 2];
-                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
-                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
-                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
-                buffer_frame[mirrored_cell] = temp_1;
-                buffer_frame[mirrored_cell + 1] = temp_2;
-                buffer_frame[mirrored_cell + 2] = temp_3;
-            }
-        }
-    }
-    else if (mirrored_col < col) {
-        for (; col > mirrored_col; --col, ++mirrored_col) {
-            for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-                int my_cell = row * width * 3 + col * 3;
-                int mirrored_cell = row * width * 3 + mirrored_col * 3;
-                unsigned char temp_1 = buffer_frame[my_cell];
-                unsigned char temp_2 = buffer_frame[my_cell + 1];
-                unsigned char temp_3 = buffer_frame[my_cell + 2];
-                buffer_frame[my_cell] = buffer_frame[mirrored_cell];
-                buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
-                buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
-                buffer_frame[mirrored_cell] = temp_1;
-                buffer_frame[mirrored_cell + 1] = temp_2;
-                buffer_frame[mirrored_cell + 2] = temp_3;
-            }
-        }
-    }
-    else {
-        return;
-    }
-    // printf("col %d\n", col);
-    // printf("mirrored_col %d\n", mirrored_col);
-    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-    //     for (int col = left_col; col <= right_col; ++col) {
-    //         int my_cell = row * width * 3 + col * 3;
-    //         int mirrored_cell = row * width * 3 + (width - 1 - col) * 3;
-    //         unsigned char temp_1 = buffer_frame[my_cell];
-    //         unsigned char temp_2 = buffer_frame[my_cell + 1];
-    //         unsigned char temp_3 = buffer_frame[my_cell + 2];
-    //         buffer_frame[my_cell] = buffer_frame[mirrored_cell];
-    //         buffer_frame[my_cell + 1] = buffer_frame[mirrored_cell + 1];
-    //         buffer_frame[my_cell + 2] = buffer_frame[mirrored_cell + 2];
-    //         buffer_frame[mirrored_cell] = temp_1;
-    //         buffer_frame[mirrored_cell + 1] = temp_2;
-    //         buffer_frame[mirrored_cell + 2] = temp_3;
-    //     }
-    // }
-    int temp = top_left[1];
-    top_left[1] = top_right[1] + (y_axis - top_right[1]) * 2;
-    bottom_left[1] = top_left[1];
-    top_right[1] = temp + (y_axis - temp) * 2;
-    bottom_right[1] = top_right[1];
-    // int old_left = top_left[1];
-    // top_left[1] = width - 1 - top_right[1];
-    // bottom_left[1] = top_left[1];
-    // top_right[1] = width - 1 - old_left;
-    // bottom_right[1] = top_right[1];
+void processMirrorY() {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
+    float y_axis = (g_width - 1) * 0.5;
+    int temp = top_left_col;
+    top_left_col = top_right_col + (y_axis - top_right_col) * 2;
+    bottom_left_col = top_left_col;
+    top_right_col = temp + (y_axis - temp) * 2;
+    bottom_right_col = top_right_col;
+    if (c == abcd) assign_BADC();
+    else if (c == acbd) assign_CADB();
+    else if (c == badc) assign_ABCD();
+    else if (c == cadb) assign_ACBD();
+    else if (c == dbca) assign_BDAC();
+    else if (c == dcba) assign_CDAB();
+    else if (c == cdab) assign_DCBA();
+    else if (c == bdac) assign_DBCA();
+    // else printf("ERROR!!!!!!!!!!!!! UNKNOWN CASE, DEBUG PLEASE\n");
     return;
 }
 
-void processRotateCW1(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    // printBMP(width, height, buffer_frame);
-    int net_col = top_right[1] - top_left[1] + 1;
-    int net_row = bottom_left[0] - top_left[0] + 1;
-    // printf("NET COL: %d\n", net_col);
-    // printf("NET ROW: %d\n", net_row);
-    // // transpose the image
-    // for (int row = 0; row < height; ++row) {
-    //     for (int col = row + 1; col < width; ++col) {
-    //         int row_col = row * width * 3 + col * 3;
-    //         int col_row = col * width * 3 + row * 3;
-    //         unsigned char temp_1 = buffer_frame[row_col];
-    //         unsigned char temp_2 = buffer_frame[row_col + 1];
-    //         unsigned char temp_3 = buffer_frame[row_col + 2];
-    //         buffer_frame[row_col] = buffer_frame[col_row];
-    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-    //         buffer_frame[col_row] = temp_1;
-    //         buffer_frame[col_row + 1] = temp_2;
-    //         buffer_frame[col_row + 2] = temp_3;
-    //     }
-    // }
-    // printf("Before loop!");
-    unsigned char *transpose = allocateFrame(net_row, net_col);
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_left[1]; col <= top_right[1]; ++col) {
-            int row_col = row * width * 3 + col * 3;
-            int col_row = (col - top_left[1]) * net_row * 3 + (row - top_left[0]) * 3;
-            // printf("COL ROW: %d\n", col_row);
-            transpose[col_row] = buffer_frame[row_col];
-            transpose[col_row + 1] = buffer_frame[row_col + 1];
-            transpose[col_row + 2] = buffer_frame[row_col + 2];
-            buffer_frame[row_col] = 255;
-            buffer_frame[row_col + 1] = 255;
-            buffer_frame[row_col + 2] = 255;
-        }
-    }
-    // printf("NET COL: %d\n", net_col);
-    // printf("NET ROW: %d\n", net_row);
-    // printf("Done first loop!");
-    // top_left -> top_left 
-    // top_right -> bottom_left 
-    // bottom_left -> top_right 
-    // bottom_right -> bottom_right
+void processRotateCW1() {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
     int temp;
     // top_left
-    temp = top_left[0];
-    top_left[0] = top_left[1];
-    top_left[1] = temp;
+    temp = top_left_row;
+    top_left_row = top_left_col;
+    top_left_col = temp;
 
     // bottom_right
-    temp = bottom_right[0];
-    bottom_right[0] = bottom_right[1];
-    bottom_right[1] = temp;
+    temp = bottom_right_row;
+    bottom_right_row = bottom_right_col;
+    bottom_right_col = temp;
 
     // top_right
-    temp = top_right[0];
-    top_right[0] = top_right[1];
-    top_right[1] = temp;
+    temp = top_right_row;
+    top_right_row = top_right_col;
+    top_right_col = temp;
 
     // bottom_left
-    temp = bottom_left[0];
-    bottom_left[0] = bottom_left[1];
-    bottom_left[1] = temp;
+    temp = bottom_left_row;
+    bottom_left_row = bottom_left_col;
+    bottom_left_col = temp;
 
     // swap top_right bottom_left
-    int temp1 = top_right[0];
-    int temp2 = top_right[1];
-    top_right[0] = bottom_left[0];
-    top_right[1] = bottom_left[1];
-    bottom_left[0] = temp1;
-    bottom_left[1] = temp2;
+    int temp1 = top_right_row;
+    int temp2 = top_right_col;
+    top_right_row = bottom_left_row;
+    top_right_col = bottom_left_col;
+    bottom_left_row = temp1;
+    bottom_left_col = temp2;
 
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_left[1]; col <= top_right[1]; ++col) {
-            int cell = row * width * 3 + col * 3;
-            int r = row - top_left[0];
-            int c = col - top_left[1];
-            int tcell = r * net_row * 3 + c * 3;
-            buffer_frame[cell] = transpose[tcell];
-            buffer_frame[cell + 1] = transpose[tcell + 1];
-            buffer_frame[cell + 2] = transpose[tcell + 2];
-        }
-    }
-    deallocateFrame(transpose);
-    // for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-    //     for (int col = row + 1; col <= top_right[1]; ++col) {
-    //         int row_col = row * width * 3 + col * 3;
-    //         int col_row = col * width * 3 + row * 3;
-    //         unsigned char temp_1 = buffer_frame[row_col];
-    //         unsigned char temp_2 = buffer_frame[row_col + 1];
-    //         unsigned char temp_3 = buffer_frame[row_col + 2];
-    //         buffer_frame[row_col] = buffer_frame[col_row];
-    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-    //         buffer_frame[col_row] = temp_1;
-    //         buffer_frame[col_row + 1] = temp_2;
-    //         buffer_frame[col_row + 2] = temp_3;
-    //     }
-    // }
+    if (c == abcd) assign_ACBD();
+    else if (c == acbd) assign_ABCD();
+    else if (c == badc) assign_BDAC();
+    else if (c == cadb) assign_CDAB();
+    else if (c == dbca) assign_DCBA();
+    else if (c == dcba) assign_DBCA();
+    else if (c == cdab) assign_CADB();
+    else if (c == bdac) assign_BADC();
+    // else printf("ERROR!!!!!!!!!!!!! UNKNOWN CASE, DEBUG PLEASE\n");
 
-    // bottom_left[0] = top_left[0] + net_col;
-    // bottom_right[0] = bottom_left[0];
-    // bottom_right[1] = top_right[1];
-    // print_bounds();
-
-    // // reflect on y axis
-    // for (int row = 0; row < height; ++row) {
-    //     int left = 0;
-    //     int right = width - 1;
-    //     int row_cell = row * width * 3;
-    //     for(; left < right; ++left, --right) {
-    //         int row_cell_left = row_cell + left * 3;
-    //         int row_cell_right = row_cell + right * 3;
-    //         unsigned char temp_1 = buffer_frame[row_cell_left];
-    //         unsigned char temp_2 = buffer_frame[row_cell_left + 1];
-    //         unsigned char temp_3 = buffer_frame[row_cell_left + 2];
-    //         buffer_frame[row_cell_left] = buffer_frame[row_cell_right];
-    //         buffer_frame[row_cell_left + 1] = buffer_frame[row_cell_right + 1];
-    //         buffer_frame[row_cell_left + 2] = buffer_frame[row_cell_right + 2];
-    //         buffer_frame[row_cell_right] = temp_1;
-    //         buffer_frame[row_cell_right + 1] = temp_2;
-    //         buffer_frame[row_cell_right + 2] = temp_3;
-    //     }
-    // }
-    processMirrorY(buffer_frame, width, height);
+    processMirrorY();
     // printBMP(width, height, buffer_frame);
     return;
 }
 
-void processRotateCW2(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    processMirrorX(buffer_frame, width, height);
-    processMirrorY(buffer_frame, width, height);
+void processRotateCW2() {
+    processMirrorX();
+    processMirrorY();
     return;
 }
 
-void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned height) {
-    // printBMP(width, height, buffer_frame);
-    int net_col = top_right[1] - top_left[1] + 1;
-    int net_row = bottom_left[0] - top_left[0] + 1;
-    // printf("NET COL: %d\n", net_col);
-    // printf("NET ROW: %d\n", net_row);
-    // // transpose the image
-    // for (int row = 0; row < height; ++row) {
-    //     for (int col = row + 1; col < width; ++col) {
-    //         int row_col = row * width * 3 + col * 3;
-    //         int col_row = col * width * 3 + row * 3;
-    //         unsigned char temp_1 = buffer_frame[row_col];
-    //         unsigned char temp_2 = buffer_frame[row_col + 1];
-    //         unsigned char temp_3 = buffer_frame[row_col + 2];
-    //         buffer_frame[row_col] = buffer_frame[col_row];
-    //         buffer_frame[row_col + 1] = buffer_frame[col_row + 1];
-    //         buffer_frame[row_col + 2] = buffer_frame[col_row + 2];
-    //         buffer_frame[col_row] = temp_1;
-    //         buffer_frame[col_row + 1] = temp_2;
-    //         buffer_frame[col_row + 2] = temp_3;
-    //     }
-    // }
-    // printf("Before loop!");
-    unsigned char *transpose = allocateFrame(net_row, net_col);
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_left[1]; col <= top_right[1]; ++col) {
-            int row_col = row * width * 3 + col * 3;
-            int col_row = (col - top_left[1]) * net_row * 3 + (row - top_left[0]) * 3;
-            // printf("COL ROW: %d\n", col_row);
-            transpose[col_row] = buffer_frame[row_col];
-            transpose[col_row + 1] = buffer_frame[row_col + 1];
-            transpose[col_row + 2] = buffer_frame[row_col + 2];
-            buffer_frame[row_col] = 255;
-            buffer_frame[row_col + 1] = 255;
-            buffer_frame[row_col + 2] = 255;
-        }
-    }
-    // printf("NET COL: %d\n", net_col);
-    // printf("NET ROW: %d\n", net_row);
-    // printf("Done first loop!");
-    // top_left -> top_left 
-    // top_right -> bottom_left 
-    // bottom_left -> top_right 
-    // bottom_right -> bottom_right
+void processRotateCW3() {
+    short int c = 0;
+    if (ABCD()) c = abcd;
+    else if (ACBD()) c = acbd;
+    else if (BADC()) c = badc;
+    else if (CADB()) c = cadb;
+    else if (DBCA()) c = dbca;
+    else if (DCBA()) c = dcba;
+    else if (CDAB()) c = cdab;
+    else if (BDAC()) c = bdac;
     int temp;
     // top_left
-    temp = top_left[0];
-    top_left[0] = top_left[1];
-    top_left[1] = temp;
+    temp = top_left_row;
+    top_left_row = top_left_col;
+    top_left_col = temp;
 
     // bottom_right
-    temp = bottom_right[0];
-    bottom_right[0] = bottom_right[1];
-    bottom_right[1] = temp;
+    temp = bottom_right_row;
+    bottom_right_row = bottom_right_col;
+    bottom_right_col = temp;
 
     // top_right
-    temp = top_right[0];
-    top_right[0] = top_right[1];
-    top_right[1] = temp;
+    temp = top_right_row;
+    top_right_row = top_right_col;
+    top_right_col = temp;
 
     // bottom_left
-    temp = bottom_left[0];
-    bottom_left[0] = bottom_left[1];
-    bottom_left[1] = temp;
+    temp = bottom_left_row;
+    bottom_left_row = bottom_left_col;
+    bottom_left_col = temp;
 
     // swap top_right bottom_left
-    int temp1 = top_right[0];
-    int temp2 = top_right[1];
-    top_right[0] = bottom_left[0];
-    top_right[1] = bottom_left[1];
-    bottom_left[0] = temp1;
-    bottom_left[1] = temp2;
+    int temp1 = top_right_row;
+    int temp2 = top_right_col;
+    top_right_row = bottom_left_row;
+    top_right_col = bottom_left_col;
+    bottom_left_row = temp1;
+    bottom_left_col = temp2;
 
-    for (int row = top_left[0]; row <= bottom_left[0]; ++row) {
-        for (int col = top_left[1]; col <= top_right[1]; ++col) {
-            int cell = row * width * 3 + col * 3;
-            int r = row - top_left[0];
-            int c = col - top_left[1];
-            int tcell = r * net_row * 3 + c * 3;
-            buffer_frame[cell] = transpose[tcell];
-            buffer_frame[cell + 1] = transpose[tcell + 1];
-            buffer_frame[cell + 2] = transpose[tcell + 2];
-        }
-    }
-    deallocateFrame(transpose);
-    processMirrorX(buffer_frame, width, height);
+    if (c == abcd) assign_ACBD();
+    else if (c == acbd) assign_ABCD();
+    else if (c == badc) assign_BDAC();
+    else if (c == cadb) assign_CDAB();
+    else if (c == dbca) assign_DCBA();
+    else if (c == dcba) assign_DBCA();
+    else if (c == cdab) assign_CADB();
+    else if (c == bdac) assign_BADC();
+    // else printf("ERROR!!!!!!!!!!!!! UNKNOWN CASE, DEBUG PLEASE\n");
+
+    processMirrorX();
     return;
 }
 
@@ -623,22 +652,127 @@ void processRotateCW3(unsigned char *buffer_frame, unsigned width, unsigned heig
  * @return - pointer pointing a buffer storing a modified 24-bit bitmap image
  * Note: You can assume the frame will always be square and you will be rotating the entire image
  **********************************************************************************************************************/
-void processRotateCW(unsigned char *buffer_frame, unsigned width, unsigned height, int rotate_iteration) {
+void processRotateCW(int rotate_iteration) {
     if (rotate_iteration == 0 || rotate_iteration == 4) {
         return;
     }
     else if (rotate_iteration == 1) {
-        processRotateCW1(buffer_frame, width, height);
+        processRotateCW1();
         return;
     }
     else if (rotate_iteration == 2) {
-        processRotateCW2(buffer_frame, width, height);
+        processRotateCW2();
         return;
     }
-    processRotateCW3(buffer_frame, width, height);
+    processRotateCW3();
     return;
 }
 
+unsigned char *get_frame_from_vertices() {
+    // printf("Getting frame...\n");
+    // print_bounds();
+    // print_abcd();
+    if (ABCD()) {
+        // printf("ABCD!!!!!\n");
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= bottom_left_row - top_left_row; i++) {
+            memcpy(&new_frame[(top_left_row + i) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
+                (top_right_col + 1) * 3 - top_left_col * 3);
+        }
+        // printBMP(g_width, g_width, new_frame);
+        return new_frame;
+    }
+    else if (ACBD()) { // needs testing
+        // printf("ACBD!!!!\n");
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                int dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        return new_frame;
+    }
+    else if (BADC()) {
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                int dest_pixel_addr = (top_left_row + i) * g_width * 3 + (top_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        return new_frame;
+    }
+    else if (CADB()) { // rotate CW1
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                int dest_pixel_addr = (top_left_row + j) * g_width * 3 + (top_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        return new_frame;
+    }
+    else if (DBCA()) {
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                int dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_right_col - i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        return new_frame;
+    }
+    else if (DCBA()) {
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                int dest_pixel_addr = (bottom_left_row - i) * g_width * 3 + (bottom_right_col - j) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        return new_frame;
+    }
+    else if (CDAB()) {
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= bottom_left_row - top_left_row; i++) {
+            memcpy(&new_frame[(bottom_left_row - i) * g_width * 3 + top_left_col * 3], 
+                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
+                (top_right_col + 1) * 3 - top_left_col * 3);
+        }
+        return new_frame;
+    }
+    else if (BDAC()) {
+        unsigned char *new_frame = allocateFrame(g_width, g_width);
+        memset(new_frame, 255, g_width * g_width * 3);
+        for (short int i = 0; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+            for (short int j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
+                int initial_pixel_addr = (initial_top_left_row + i) * g_width * 3 + (initial_top_left_col + j) * 3;
+                int dest_pixel_addr = (bottom_left_row - j) * g_width * 3 + (bottom_left_col + i) * 3;
+                memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
+            }
+        }
+        return new_frame;
+    }
+    // else {
+    //     printf("GET UPDATED FRAME ERROR!!!!!!!!!!!!! UNKNOWN CASE, DEBUG PLEASE\n");
+    //     return NULL;
+    // }
+    return NULL;
+}
 
 /***********************************************************************************************************************
  * WARNING: Do not modify the implementation_driver and team info prototype (name, parameter, return value) !!!
@@ -646,7 +780,7 @@ void processRotateCW(unsigned char *buffer_frame, unsigned width, unsigned heigh
  **********************************************************************************************************************/
 void print_team_info(){
     // Please modify this field with something interesting
-    char team_name[] = ":) (:";
+    char team_name[] = "alwidubalsdh";
     // Please fill in your information
     char student_first_name[] = "Jackson";
     char student_last_name[] = "Nie";
@@ -682,18 +816,22 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     int net_rotate = 0;
     int net_mirror_x = 0;
     int net_mirror_y = 0;
-    set_image_bounds(frame_buffer, width, height);
+    g_width = width;
+    initial_buffer = frame_buffer;
+    frame_buffer = allocateFrame(g_width, g_width);
+    memcpy(frame_buffer, initial_buffer, g_width * g_width * 3);
+    set_image_bounds(initial_buffer);
     if (!found_image) {
         for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx += 25) {
-             verifyFrame(frame_buffer, width, height, grading_mode);
+             verifyFrame(frame_buffer, g_width, g_width, grading_mode);
         }
         return;
     }
     // printf("WIDTH: %d\n", width);
-    // printf("top_left: %d %d\n", top_left[0], top_left[1]);
-    // printf("top_right: %d %d\n", top_right[0], top_right[1]);
-    // printf("bot_left: %d %d\n", bottom_left[0], bottom_left[1]);
-    // printf("bot_right: %d %d\n", bottom_right[0], bottom_right[1]);
+    // printf("top_left: %d %d\n", top_left_row, top_left_col);
+    // printf("top_right: %d %d\n", top_right_row, top_right_col);
+    // printf("bot_left: %d %d\n", bottom_left_row, bottom_left_col);
+    // printf("bot_right: %d %d\n", bottom_right_row, bottom_right_col);
     for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx++) {
 //        printf("Processing sensor value #%d: %s, %d\n", sensorValueIdx, sensor_values[sensorValueIdx].key,
 //               sensor_values[sensorValueIdx].value);
@@ -701,22 +839,22 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_shift_ver += sensor_values[sensorValueIdx].value;
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
         //    printBMP(width, height, frame_buffer);
@@ -725,22 +863,22 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_shift_hor -= sensor_values[sensorValueIdx].value;
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
             // printBMP(width, height, frame_buffer);
@@ -749,22 +887,22 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
 
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
             // printBMP(width, height, frame_buffer);
@@ -772,22 +910,22 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_shift_hor += sensor_values[sensorValueIdx].value;
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
 //            printBMP(width, height, frame_buffer);
@@ -796,30 +934,30 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_rotate += value;
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
-                processMoveRight(frame_buffer, width, height, net_shift_hor);
+                processMoveRight(net_shift_hor);
                 net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
-                processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                processMoveLeft(-net_shift_hor);
                 net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
-                processMoveUp(frame_buffer, width, height, net_shift_ver);
+                processMoveUp(net_shift_ver);
                 net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
-                processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                processMoveDown(-net_shift_ver);
                 net_shift_ver = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
 //            printBMP(width, height, frame_buffer);
@@ -828,30 +966,30 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_rotate -= value;
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
-                processMoveRight(frame_buffer, width, height, net_shift_hor);
+                processMoveRight(net_shift_hor);
                 net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
-                processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                processMoveLeft(-net_shift_hor);
                 net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
-                processMoveUp(frame_buffer, width, height, net_shift_ver);
+                processMoveUp(net_shift_ver);
                 net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
-                processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                processMoveDown(-net_shift_ver);
                 net_shift_ver = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
 //            printBMP(width, height, frame_buffer);
@@ -859,29 +997,29 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_mirror_x = net_mirror_x ^ 1;
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
-                processMoveRight(frame_buffer, width, height, net_shift_hor);
+                processMoveRight(net_shift_hor);
                 net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
-                processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                processMoveLeft(-net_shift_hor);
                 net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
-                processMoveUp(frame_buffer, width, height, net_shift_ver);
+                processMoveUp(net_shift_ver);
                 net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
-                processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                processMoveDown(-net_shift_ver);
                 net_shift_ver = 0;
             }
 
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 //            printBMP(width, height, frame_buffer);
@@ -889,74 +1027,76 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             net_mirror_y = net_mirror_y ^ 1;
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
-                processMoveRight(frame_buffer, width, height, net_shift_hor);
+                processMoveRight(net_shift_hor);
                 net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
-                processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                processMoveLeft(-net_shift_hor);
                 net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
-                processMoveUp(frame_buffer, width, height, net_shift_ver);
+                processMoveUp(net_shift_ver);
                 net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
-                processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                processMoveDown(-net_shift_ver);
                 net_shift_ver = 0;
             }
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 //            printBMP(width, height, frame_buffer);
         }
         processed_frames += 1;
 
-        if (processed_frames % 25 == 0){
+        if (processed_frames % 25 == 0) {
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
-                processMoveRight(frame_buffer, width, height, net_shift_hor);
+                processMoveRight(net_shift_hor);
                 net_shift_hor = 0;
             }
             else if (net_shift_hor < 0) {
-                processMoveLeft(frame_buffer, width, height, -net_shift_hor);
+                processMoveLeft(-net_shift_hor);
                 net_shift_hor = 0;
             }
             if (net_shift_ver > 0) {
-                processMoveUp(frame_buffer, width, height, net_shift_ver);
+                processMoveUp(net_shift_ver);
                 net_shift_ver = 0;
             }
             else if (net_shift_ver < 0) {
-                processMoveDown(frame_buffer, width, height, -net_shift_ver);
+                processMoveDown(-net_shift_ver);
                 net_shift_ver = 0;
             }
 
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
-                processRotateCW(frame_buffer, width, height, net_rotate % 4);
+                processRotateCW(net_rotate % 4);
                 net_rotate = 0;
             }
             else if (net_rotate < 0) {
-                processRotateCW(frame_buffer, width, height, 4 - (-net_rotate % 4));
+                processRotateCW(4 - (-net_rotate % 4));
                 net_rotate = 0;
             }
 
             /* ---------Clear mirror cache--------- */
             if (net_mirror_x == 1) {
-                processMirrorX(frame_buffer, width, height);
+                processMirrorX();
                 net_mirror_x = 0;
             }
             
             if (net_mirror_y == 1) {
-                processMirrorY(frame_buffer, width, height);
+                processMirrorY();
                 net_mirror_y = 0;
             }
-            verifyFrame(frame_buffer, width, height, grading_mode);
+            deallocateFrame(frame_buffer);
+            frame_buffer = get_frame_from_vertices();
+            verifyFrame(frame_buffer, g_width, g_width, grading_mode);
         }
     }
     return;

@@ -668,13 +668,9 @@ void processRotateCW(int rotate_iteration) {
     return;
 }
 
-unsigned char *get_frame_from_vertices() {
-    // printf("Getting frame...\n");
-    // print_bounds();
-    // print_abcd();
+void update_frame_buffer(char *new_frame) {
     if (ABCD()) {
         // printf("ABCD!!!!!\n");
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register unsigned short int bound = (bottom_left_row - top_left_row) >> 2;
@@ -700,10 +696,9 @@ unsigned char *get_frame_from_vertices() {
                 width);
         }
         // printBMP(g_width, g_width, new_frame);
-        return new_frame;
+        return;
     }
     else if (ACBD()) { // needs testing
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register short int j = 0;
@@ -808,11 +803,10 @@ unsigned char *get_frame_from_vertices() {
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
-        return new_frame;
+        return;
     }
     else if (BADC()) {
         // printf("BADC!!!!");
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register short int j = 0;
@@ -901,10 +895,9 @@ unsigned char *get_frame_from_vertices() {
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
-        return new_frame;
+        return;
     }
     else if (CADB()) { // rotate CW1
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register short int j = 0;
@@ -993,10 +986,9 @@ unsigned char *get_frame_from_vertices() {
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
-        return new_frame;
+        return;
     }
     else if (DBCA()) {
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register short int j = 0;
@@ -1082,10 +1074,9 @@ unsigned char *get_frame_from_vertices() {
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
-        return new_frame;
+        return;
     }
     else if (DCBA()) {
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register short int j = 0;
@@ -1171,10 +1162,9 @@ unsigned char *get_frame_from_vertices() {
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
-        return new_frame;
+        return;
     }
     else if (CDAB()) {        
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register unsigned short int bound = (bottom_left_row - top_left_row) >> 2;
@@ -1201,10 +1191,9 @@ unsigned char *get_frame_from_vertices() {
                 &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
                 width);
         }
-        return new_frame;
+        return;
     }
     else if (BDAC()) {
-        unsigned char *new_frame = allocateFrame(g_width, g_width);
         memset(new_frame, 255, g_width * g_width * 3);
         register short int i = 0;
         register short int j = 0;
@@ -1293,13 +1282,11 @@ unsigned char *get_frame_from_vertices() {
                 memcpy(&new_frame[dest_pixel_addr], &initial_buffer[initial_pixel_addr], 3);
             }
         }
-        return new_frame;
+        return;
     }
     // else {
     //     printf("GET UPDATED FRAME ERROR!!!!!!!!!!!!! UNKNOWN CASE, DEBUG PLEASE\n");
-    //     return NULL;
     // }
-    return NULL;
 }
 
 /***********************************************************************************************************************
@@ -1347,7 +1334,6 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     g_width = width;
     initial_buffer = frame_buffer;
     frame_buffer = allocateFrame(g_width, g_width);
-    memcpy(frame_buffer, initial_buffer, g_width * g_width * 3);
     set_image_bounds(initial_buffer);
     if (!found_image) {
         for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx += 25) {
@@ -1622,10 +1608,10 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 processMirrorY();
                 net_mirror_y = 0;
             }
-            deallocateFrame(frame_buffer);
-            frame_buffer = get_frame_from_vertices();
+            update_frame_buffer(frame_buffer);
             verifyFrame(frame_buffer, g_width, g_width, grading_mode);
         }
     }
+    deallocateFrame(frame_buffer);
     return;
 }

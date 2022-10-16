@@ -21,6 +21,7 @@
 
 
 static unsigned int g_width = 0;
+static unsigned int g_actual_width = 0;
 
 
 // TODO: find a way to accumulate rotates, shifts, and mirrors. Currently the problem
@@ -279,20 +280,20 @@ void set_image_bounds(unsigned char *buffer_frame) {
     int left_col = 1e6;
     int bot_row = -1;
     int right_col = -1;
-    size_t s = sizeof(int);
     int found = 0;
-    for (int row = 0; row < g_width; ++row) {
-        for (int col = 0; col < g_width; ++col) {
-            int cell = row * g_width * 3 + col * 3;
-            if (buffer_frame[cell] != 255 || buffer_frame[cell + 1] != 255 || buffer_frame[cell + 2] != 255) {
-                // printf("CELL 1: %d\n", buffer_frame[cell]);
-                // printf("CELL 2: %d\n", buffer_frame[cell + 1]);
-                // printf("CELL 3: %d\n", buffer_frame[cell + 2]);
-                if (top_row < 0) {
+    register int row = 0;
+    register int col = 0;
+    register int cell;
+    for (; row < g_width; ++row) {
+        cell = row * g_actual_width - 3;
+        for (col = 0; col < g_width; ++col) {
+            cell += 3;
+            if (initial_buffer[cell] != 255 || initial_buffer[cell + 1] != 255 || initial_buffer[cell + 2] != 255) {
+                if (__builtin_expect(top_row < 0, 0)) {
                     top_row = row;
                 }
                 left_col = min(col, left_col);
-                bot_row = max(row, bot_row);
+                bot_row = row;
                 right_col = max(col, right_col);
                 found = 1;
             }
@@ -669,38 +670,40 @@ void processRotateCW(int rotate_iteration) {
     return;
 }
 
-void update_frame_buffer(char *new_frame) {
+void update_frame_buffer(unsigned char *new_frame) {
     if (ABCD()) {
         // printf("ABCD!!!!!\n");
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register unsigned int bound = (bottom_left_row - top_left_row) >> 2;
         bound = bound << 2;
         register int width = (top_right_col + 1) * 3 - top_left_col * 3;
+        register int dest = top_left_row * g_actual_width - g_actual_width + top_left_col * 3;
+        register int initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
         for (; i < bound; i += 4) {
-            memcpy(&new_frame[(top_left_row + i) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
-                width);
-            memcpy(&new_frame[(top_left_row + i + 1) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i + 1) * g_width * 3 + initial_top_left_col * 3],
-                width);
-            memcpy(&new_frame[(top_left_row + i + 2) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i + 2) * g_width * 3 + initial_top_left_col * 3],
-                width);
-            memcpy(&new_frame[(top_left_row + i + 3) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i + 3) * g_width * 3 + initial_top_left_col * 3],
-                width);
+            dest += g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
+            dest += g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
+            dest += g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
+            dest += g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
         }
         for (; i <= bottom_left_row - top_left_row; i++) {
-            memcpy(&new_frame[(top_left_row + i) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
-                width);
+            dest += g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
         }
         // printBMP(g_width, g_width, new_frame);
         return;
     }
     else if (ACBD()) { // needs testing
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register int j = 0;
         register unsigned int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
@@ -718,49 +721,60 @@ void update_frame_buffer(char *new_frame) {
         register int initial_offset;
         register int dest_offset;
         for (; i < bound_i; i += 4) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_width * 3;
-            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_width * 3;
-            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_actual_width;
+            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_actual_width;
+            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_actual_width;
             dest_pixel_addr0 = (top_left_col + i) * 3;
             dest_pixel_addr1 = (top_left_col + i + 1) * 3;
             dest_pixel_addr2 = (top_left_col + i + 2) * 3;
             dest_pixel_addr3 = (top_left_col + i + 3) * 3;
+            initial_offset = initial_top_left_col * 3 - 3;
+            dest_offset = top_left_row * g_actual_width - g_actual_width;
             for (j = 0; j <= bound_j; j += 4) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (top_left_row + j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (top_left_row + j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 1
-                initial_offset = (initial_top_left_col + j + 1) * 3;
-                dest_offset = (top_left_row + j + 1) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 1) * 3;
+                // dest_offset = (top_left_row + j + 1) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 2
-                initial_offset = (initial_top_left_col + j + 2) * 3;
-                dest_offset = (top_left_row + j + 2) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 2) * 3;
+                // dest_offset = (top_left_row + j + 2) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 3
-                initial_offset = (initial_top_left_col + j + 3) * 3;
-                dest_offset = (top_left_row + j + 3) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 3) * 3;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
             }
             for (; j <= initial_top_right_col - initial_top_left_col; j++) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (top_left_row + j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (top_left_row + j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
@@ -769,17 +783,17 @@ void update_frame_buffer(char *new_frame) {
         }
 
         for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
             dest_pixel_addr0 = (top_left_col + i) * 3;
             for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                memcpy(&new_frame[dest_pixel_addr0 + (top_left_row + j) * g_width * 3], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
+                memcpy(&new_frame[dest_pixel_addr0 + (top_left_row + j) * g_actual_width], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
             }
         }
         return;
     }
     else if (BADC()) {
         // printf("BADC!!!!");
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register int j = 0;
         register unsigned int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
@@ -797,49 +811,61 @@ void update_frame_buffer(char *new_frame) {
         register int initial_offset;
         register int dest_offset;
         for (; i < bound_i; i += 4) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_width * 3;
-            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_width * 3;
-            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_width * 3;
-            dest_pixel_addr0 = (top_left_row + i) * g_width * 3;
-            dest_pixel_addr1 = (top_left_row + i + 1) * g_width * 3;
-            dest_pixel_addr2 = (top_left_row + i + 2) * g_width * 3;
-            dest_pixel_addr3 = (top_left_row + i + 3) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_actual_width;
+            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_actual_width;
+            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_actual_width;
+            dest_pixel_addr0 = (top_left_row + i) * g_actual_width;
+            dest_pixel_addr1 = (top_left_row + i + 1) * g_actual_width;
+            dest_pixel_addr2 = (top_left_row + i + 2) * g_actual_width;
+            dest_pixel_addr3 = (top_left_row + i + 3) * g_actual_width;
+            initial_offset = initial_top_left_col * 3 - 3;
+            dest_offset = top_right_col * 3 + 3;
             for (j = 0; j < bound_j; j += 4) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (top_right_col - j) * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (top_right_col - j) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 1
-                initial_offset = (initial_top_left_col + j + 1) * 3;
-                dest_offset = (top_right_col - (j + 1)) * 3;
+                // initial_offset = (initial_top_left_col + j + 1) * 3;
+                // dest_offset = (top_right_col - (j + 1)) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 2
-                initial_offset = (initial_top_left_col + j + 2) * 3;
-                dest_offset = (top_right_col - (j + 2)) * 3;
+                // initial_offset = (initial_top_left_col + j + 2) * 3;
+                // dest_offset = (top_right_col - (j + 2)) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 3
-                initial_offset = (initial_top_left_col + j + 3) * 3;
-                dest_offset = (top_right_col - (j + 3)) * 3;
+                // initial_offset = (initial_top_left_col + j + 3) * 3;
+                // dest_offset = (top_right_col - (j + 3)) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
             }
             for (; j <= initial_top_right_col - initial_top_left_col; j++) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (top_right_col - j) * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (top_right_col - j) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
@@ -847,8 +873,8 @@ void update_frame_buffer(char *new_frame) {
             }
         }
         for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            dest_pixel_addr0 = (top_left_row + i) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            dest_pixel_addr0 = (top_left_row + i) * g_actual_width;
             for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
                 memcpy(&new_frame[dest_pixel_addr0 + (top_right_col - j) * 3], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
             }
@@ -856,7 +882,7 @@ void update_frame_buffer(char *new_frame) {
         return;
     }
     else if (CADB()) { // rotate CW1
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register int j = 0;
         register unsigned int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
@@ -874,49 +900,61 @@ void update_frame_buffer(char *new_frame) {
         register int initial_offset;
         register int dest_offset;
         for (; i < bound_i; i += 4) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_width * 3;
-            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_width * 3;
-            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_actual_width;
+            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_actual_width;
+            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_actual_width;
             dest_pixel_addr0 = (top_right_col - i) * 3;
             dest_pixel_addr1 = (top_right_col - (i + 1)) * 3;
             dest_pixel_addr2 = (top_right_col - (i + 2)) * 3;
             dest_pixel_addr3 = (top_right_col - (i + 3)) * 3;
+            initial_offset = initial_top_left_col * 3 - 3;
+            dest_offset = top_left_row * g_actual_width - g_actual_width;
             for (j = 0; j < bound_j; j += 4) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (top_left_row + j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (top_left_row + j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 1
-                initial_offset = (initial_top_left_col + j + 1) * 3;
-                dest_offset = (top_left_row + j + 1) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 1) * 3;
+                // dest_offset = (top_left_row + j + 1) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 2
-                initial_offset = (initial_top_left_col + j + 2) * 3;
-                dest_offset = (top_left_row + j + 2) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 2) * 3;
+                // dest_offset = (top_left_row + j + 2) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
 
                 // unroll j 3
-                initial_offset = (initial_top_left_col + j + 3) * 3;
-                dest_offset = (top_left_row + j + 3) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 3) * 3;
+                // dest_offset = (top_left_row + j + 3) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
             }
             for (; j <= initial_top_right_col - initial_top_left_col; j++) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (top_left_row + j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (top_left_row + j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset += g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
@@ -924,16 +962,16 @@ void update_frame_buffer(char *new_frame) {
             }
         }
         for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
             dest_pixel_addr0 = (top_right_col - i) * 3;
             for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                memcpy(&new_frame[dest_pixel_addr0 + (top_left_row + j) * g_width * 3], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
+                memcpy(&new_frame[dest_pixel_addr0 + (top_left_row + j) * g_actual_width], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
             }
         }
         return;
     }
     else if (DBCA()) {
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register int j = 0;
         register unsigned int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
@@ -951,46 +989,58 @@ void update_frame_buffer(char *new_frame) {
         register int initial_offset;
         register int dest_offset;
         for (; i < bound_i; i += 4) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_width * 3;
-            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_width * 3;
-            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_actual_width;
+            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_actual_width;
+            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_actual_width;
             dest_pixel_addr0 = (bottom_right_col - i) * 3;
             dest_pixel_addr1 = (bottom_right_col - (i + 1)) * 3;
             dest_pixel_addr2 = (bottom_right_col - (i + 2)) * 3;
             dest_pixel_addr3 = (bottom_right_col - (i + 3)) * 3;
+            initial_offset = initial_top_left_col * 3 - 3;
+            dest_offset = bottom_left_row * g_actual_width + g_actual_width;
             for (j = 0; j < bound_j; j += 4) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (bottom_left_row - j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (bottom_left_row - j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 // unroll j 1
-                initial_offset = (initial_top_left_col + j + 1) * 3;
-                dest_offset = (bottom_left_row - (j + 1)) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 1) * 3;
+                // dest_offset = (bottom_left_row - (j + 1)) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 // unroll j 2
-                initial_offset = (initial_top_left_col + j + 2) * 3;
-                dest_offset = (bottom_left_row - (j + 2)) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 2) * 3;
+                // dest_offset = (bottom_left_row - (j + 2)) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 // unroll j 3
-                initial_offset = (initial_top_left_col + j + 3) * 3;
-                dest_offset = (bottom_left_row - (j + 3)) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 3) * 3;
+                // dest_offset = (bottom_left_row - (j + 3)) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
             }
             for (; j <= initial_top_right_col - initial_top_left_col; j++) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (bottom_left_row - j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (bottom_left_row - j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
@@ -998,16 +1048,16 @@ void update_frame_buffer(char *new_frame) {
             }
         }
         for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
             dest_pixel_addr0 = (bottom_right_col - i) * 3;
             for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                memcpy(&new_frame[dest_pixel_addr0 + (bottom_left_row - j) * g_width * 3], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
+                memcpy(&new_frame[dest_pixel_addr0 + (bottom_left_row - j) * g_actual_width], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
             }
         }
         return;
     }
     else if (DCBA()) {
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register int j = 0;
         register unsigned int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
@@ -1025,46 +1075,58 @@ void update_frame_buffer(char *new_frame) {
         register int initial_offset;
         register int dest_offset;
         for (; i < bound_i; i += 4) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_width * 3;
-            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_width * 3;
-            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_width * 3;
-            dest_pixel_addr0 = (bottom_left_row - i) * g_width * 3;
-            dest_pixel_addr1 = (bottom_left_row - (i + 1)) * g_width * 3;
-            dest_pixel_addr2 = (bottom_left_row - (i + 2)) * g_width * 3;
-            dest_pixel_addr3 = (bottom_left_row - (i + 3)) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_actual_width;
+            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_actual_width;
+            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_actual_width;
+            dest_pixel_addr0 = (bottom_left_row - i) * g_actual_width;
+            dest_pixel_addr1 = (bottom_left_row - (i + 1)) * g_actual_width;
+            dest_pixel_addr2 = (bottom_left_row - (i + 2)) * g_actual_width;
+            dest_pixel_addr3 = (bottom_left_row - (i + 3)) * g_actual_width;
+            initial_offset = initial_top_left_col * 3 - 3;
+            dest_offset = bottom_right_col * 3 + 3;
             for (j = 0; j < bound_j; j += 4) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (bottom_right_col - j) * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (bottom_right_col - j) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 // unroll j 1
-                initial_offset = (initial_top_left_col + j + 1) * 3;
-                dest_offset = (bottom_right_col - (j + 1)) * 3;
+                // initial_offset = (initial_top_left_col + j + 1) * 3;
+                // dest_offset = (bottom_right_col - (j + 1)) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 // unroll j 2
-                initial_offset = (initial_top_left_col + j + 2) * 3;
-                dest_offset = (bottom_right_col - (j + 2)) * 3;
+                // initial_offset = (initial_top_left_col + j + 2) * 3;
+                // dest_offset = (bottom_right_col - (j + 2)) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 // unroll j 3
-                initial_offset = (initial_top_left_col + j + 3) * 3;
-                dest_offset = (bottom_right_col - (j + 3)) * 3;
+                // initial_offset = (initial_top_left_col + j + 3) * 3;
+                // dest_offset = (bottom_right_col - (j + 3)) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
             }
             for (; j <= initial_top_right_col - initial_top_left_col; j++) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (bottom_right_col - j) * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (bottom_right_col - j) * 3;
+                initial_offset += 3;
+                dest_offset -= 3;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
@@ -1072,8 +1134,8 @@ void update_frame_buffer(char *new_frame) {
             }
         }
         for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            dest_pixel_addr0 = (bottom_left_row - i) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            dest_pixel_addr0 = (bottom_left_row - i) * g_actual_width;
             for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
                 memcpy(&new_frame[dest_pixel_addr0 + (bottom_right_col - j) * 3], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
             }
@@ -1081,36 +1143,38 @@ void update_frame_buffer(char *new_frame) {
         return;
     }
     else if (CDAB()) {        
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register unsigned int bound = (bottom_left_row - top_left_row) >> 2;
         bound = bound << 2;
         register int width = (top_right_col + 1) * 3 - top_left_col * 3;
+        register int dest = bottom_left_row * g_actual_width + g_actual_width + top_left_col * 3;
+        register int initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
         for (; i < bound; i += 4) {
+            dest -= g_actual_width;
+            initial += g_actual_width;
             // printf("i: %d\n", i);
-            memcpy(&new_frame[(bottom_left_row - i) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
-                width);
-            memcpy(&new_frame[(bottom_left_row - i - 1) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i + 1) * g_width * 3 + initial_top_left_col * 3],
-                width);
-            memcpy(&new_frame[(bottom_left_row - i - 2) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i + 2) * g_width * 3 + initial_top_left_col * 3],
-                width);
-            memcpy(&new_frame[(bottom_left_row - i - 3) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i + 3) * g_width * 3 + initial_top_left_col * 3],
-                width);
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
+            dest -= g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
+            dest -= g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
+            dest -= g_actual_width;
+            initial += g_actual_width;
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
         }
         for (; i <= bottom_left_row - top_left_row; i++) {
+            dest -= g_actual_width;
+            initial += g_actual_width;
             // printf("NEW LOOP i: %d\n", i);
-            memcpy(&new_frame[(bottom_left_row - i) * g_width * 3 + top_left_col * 3], 
-                &initial_buffer[(initial_top_left_row + i) * g_width * 3 + initial_top_left_col * 3],
-                width);
+            memcpy(&new_frame[dest], &initial_buffer[initial], width);
         }
         return;
     }
     else if (BDAC()) {
-        memset(new_frame, 255, g_width * g_width * 3);
+        memset(new_frame, 255, g_width * g_actual_width);
         register int i = 0;
         register int j = 0;
         register unsigned int bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
@@ -1128,49 +1192,61 @@ void update_frame_buffer(char *new_frame) {
         register int initial_offset;
         register int dest_offset;
         for (; i < bound_i; i += 4) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
-            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_width * 3;
-            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_width * 3;
-            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
+            initial_pixel_addr1 = (initial_top_left_row + i + 1) * g_actual_width;
+            initial_pixel_addr2 = (initial_top_left_row + i + 2) * g_actual_width;
+            initial_pixel_addr3 = (initial_top_left_row + i + 3) * g_actual_width;
             dest_pixel_addr0 = (bottom_left_col + i) * 3;
             dest_pixel_addr1 = (bottom_left_col + i + 1) * 3;
             dest_pixel_addr2 = (bottom_left_col + i + 2) * 3;
             dest_pixel_addr3 = (bottom_left_col + i + 3) * 3;
+            initial_offset = initial_top_left_col * 3 - 3;
+            dest_offset = bottom_left_row * g_actual_width + g_actual_width;
             for (j = 0; j < bound_j; j += 4) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (bottom_left_row - j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (bottom_left_row - j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 
                 // unroll j 1                
-                initial_offset = (initial_top_left_col + j + 1) * 3;
-                dest_offset = (bottom_left_row - (j + 1)) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 1) * 3;
+                // dest_offset = (bottom_left_row - (j + 1)) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 
                 // unroll j 2
-                initial_offset = (initial_top_left_col + j + 2) * 3;
-                dest_offset = (bottom_left_row - (j + 2)) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 2) * 3;
+                // dest_offset = (bottom_left_row - (j + 2)) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
                 
                 // unroll j 3
-                initial_offset = (initial_top_left_col + j + 3) * 3;
-                dest_offset = (bottom_left_row - (j + 3)) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j + 3) * 3;
+                // dest_offset = (bottom_left_row - (j + 3)) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr3 + dest_offset], &initial_buffer[initial_pixel_addr3 + initial_offset], 3);
             }
             for (; j <= initial_top_right_col - initial_top_left_col; j++) {
-                initial_offset = (initial_top_left_col + j) * 3;
-                dest_offset = (bottom_left_row - j) * g_width * 3;
+                // initial_offset = (initial_top_left_col + j) * 3;
+                // dest_offset = (bottom_left_row - j) * g_actual_width;
+                initial_offset += 3;
+                dest_offset -= g_actual_width;
                 memcpy(&new_frame[dest_pixel_addr0 + dest_offset], &initial_buffer[initial_pixel_addr0 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr1 + dest_offset], &initial_buffer[initial_pixel_addr1 + initial_offset], 3);
                 memcpy(&new_frame[dest_pixel_addr2 + dest_offset], &initial_buffer[initial_pixel_addr2 + initial_offset], 3);
@@ -1178,10 +1254,10 @@ void update_frame_buffer(char *new_frame) {
             }
         }
         for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
-            initial_pixel_addr0 = (initial_top_left_row + i) * g_width * 3;
+            initial_pixel_addr0 = (initial_top_left_row + i) * g_actual_width;
             dest_pixel_addr0 = (bottom_left_col + i) * 3;
             for (j = 0; j <= initial_top_right_col - initial_top_left_col; j++) {
-                memcpy(&new_frame[dest_pixel_addr0 + (bottom_left_row - j) * g_width * 3], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
+                memcpy(&new_frame[dest_pixel_addr0 + (bottom_left_row - j) * g_actual_width], &initial_buffer[initial_pixel_addr0 + (initial_top_left_col + j) * 3], 3);
             }
         }
         return;
@@ -1197,7 +1273,7 @@ void update_frame_buffer(char *new_frame) {
  **********************************************************************************************************************/
 void print_team_info(){
     // Please modify this field with something interesting
-    char team_name[] = "alwidubalsdh";
+    char team_name[] = "Tuntunba";
     // Please fill in your information
     char student_first_name[] = "Jackson";
     char student_last_name[] = "Nie";
@@ -1236,12 +1312,13 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     char x_dir = 1;
     char y_dir = 1;
     g_width = width;
+    g_actual_width = width * 3;
     initial_buffer = frame_buffer;
     frame_buffer = allocateFrame(g_width, g_width);
     set_image_bounds(initial_buffer);
     if (!found_image) {
         for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx += 25) {
-             verifyFrame(frame_buffer, g_width, g_width, grading_mode);
+             verifyFrame(initial_buffer, g_width, g_width, grading_mode);
         }
         return;
     }
@@ -1250,10 +1327,18 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     // printf("top_right: %d %d\n", top_right_row, top_right_col);
     // printf("bot_left: %d %d\n", bottom_left_row, bottom_left_col);
     // printf("bot_right: %d %d\n", bottom_right_row, bottom_right_col);
-    for (int sensorValueIdx = 0; sensorValueIdx < sensor_values_count; sensorValueIdx++) {
+    register char *sk;
+    register int sensorValueIdx = 0;
+
+    sensor_values_count *= 0.04;
+    sensor_values_count *= 25;
+
+    // TODO: check whether can modulo by 5
+    for (; sensorValueIdx < sensor_values_count; sensorValueIdx += 5) {
 //        printf("Processing sensor value #%d: %s, %d\n", sensorValueIdx, sensor_values[sensorValueIdx].key,
 //               sensor_values[sensorValueIdx].value);
-        if (!strcmp(sensor_values[sensorValueIdx].key, "W")) {
+        sk = sensor_values[sensorValueIdx].key;
+        if (!strcmp(sk, "W")) {
             net_shift_ver += sensor_values[sensorValueIdx].value;
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
@@ -1276,7 +1361,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_mirror_y = 0;
             }
         //    printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "A")) {
+        } else if (!strcmp(sk, "A")) {
             // printBMP(width, height, frame_buffer);
             net_shift_hor -= sensor_values[sensorValueIdx].value;
             /* ---------Clear rotate cache--------- */
@@ -1300,7 +1385,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_mirror_y = 0;
             }
             // printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "S")) {
+        } else if (!strcmp(sk, "S")) {
             net_shift_ver -= sensor_values[sensorValueIdx].value;
 
             /* ---------Clear rotate cache--------- */
@@ -1324,7 +1409,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_mirror_y = 0;
             }
             // printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "D")) {
+        } else if (!strcmp(sk, "D")) {
             net_shift_hor += sensor_values[sensorValueIdx].value;
             /* ---------Clear rotate cache--------- */
             if (net_rotate > 0) {
@@ -1347,7 +1432,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_mirror_y = 0;
             }
 //            printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "CW")) {
+        } else if (!strcmp(sk, "CW")) {
             int value = sensor_values[sensorValueIdx].value;
             net_rotate += value;
             /* ---------Clear shift cache--------- */
@@ -1379,7 +1464,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_mirror_y = 0;
             }
 //            printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "CCW")) {
+        } else if (!strcmp(sk, "CCW")) {
             int value = sensor_values[sensorValueIdx].value;
             net_rotate -= value;
             /* ---------Clear shift cache--------- */
@@ -1411,7 +1496,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_mirror_y = 0;
             }
 //            printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "MX")) {
+        } else if (!strcmp(sk, "MX")) {
             net_mirror_x = net_mirror_x ^ 1;
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
@@ -1441,7 +1526,895 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
                 net_rotate = 0;
             }
 //            printBMP(width, height, frame_buffer);
-        } else if (!strcmp(sensor_values[sensorValueIdx].key, "MY")) {
+        } else if (!strcmp(sk, "MY")) {
+            net_mirror_y = net_mirror_y ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        }
+        processed_frames += 1;
+
+        // ******************* Unroll 1
+        sk = sensor_values[sensorValueIdx + 1].key;
+        if (!strcmp(sk, "W")) {
+            net_shift_ver += sensor_values[sensorValueIdx + 1].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+        //    printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "A")) {
+            // printBMP(width, height, frame_buffer);
+            net_shift_hor -= sensor_values[sensorValueIdx + 1].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "S")) {
+            net_shift_ver -= sensor_values[sensorValueIdx + 1].value;
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "D")) {
+            net_shift_hor += sensor_values[sensorValueIdx + 1].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CW")) {
+            int value = sensor_values[sensorValueIdx + 1].value;
+            net_rotate += value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CCW")) {
+            int value = sensor_values[sensorValueIdx + 1].value;
+            net_rotate -= value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MX")) {
+            net_mirror_x = net_mirror_x ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MY")) {
+            net_mirror_y = net_mirror_y ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        }
+        processed_frames += 1;
+
+        // ******************* Unroll 2
+        sk = sensor_values[sensorValueIdx + 2].key;
+        if (!strcmp(sk, "W")) {
+            net_shift_ver += sensor_values[sensorValueIdx + 2].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+        //    printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "A")) {
+            // printBMP(width, height, frame_buffer);
+            net_shift_hor -= sensor_values[sensorValueIdx + 2].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "S")) {
+            net_shift_ver -= sensor_values[sensorValueIdx + 2].value;
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "D")) {
+            net_shift_hor += sensor_values[sensorValueIdx + 2].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CW")) {
+            int value = sensor_values[sensorValueIdx + 2].value;
+            net_rotate += value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CCW")) {
+            int value = sensor_values[sensorValueIdx + 2].value;
+            net_rotate -= value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MX")) {
+            net_mirror_x = net_mirror_x ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MY")) {
+            net_mirror_y = net_mirror_y ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        }
+        processed_frames += 1;
+
+        // ******************* Unroll 3
+        sk = sensor_values[sensorValueIdx + 3].key;
+        if (!strcmp(sk, "W")) {
+            net_shift_ver += sensor_values[sensorValueIdx + 3].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+        //    printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "A")) {
+            // printBMP(width, height, frame_buffer);
+            net_shift_hor -= sensor_values[sensorValueIdx + 3].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "S")) {
+            net_shift_ver -= sensor_values[sensorValueIdx + 3].value;
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "D")) {
+            net_shift_hor += sensor_values[sensorValueIdx + 3].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CW")) {
+            int value = sensor_values[sensorValueIdx + 3].value;
+            net_rotate += value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CCW")) {
+            int value = sensor_values[sensorValueIdx + 3].value;
+            net_rotate -= value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MX")) {
+            net_mirror_x = net_mirror_x ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MY")) {
+            net_mirror_y = net_mirror_y ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        }
+        processed_frames += 1;
+
+        // ******************* Unroll 4
+        sk = sensor_values[sensorValueIdx + 4].key;
+        if (!strcmp(sk, "W")) {
+            net_shift_ver += sensor_values[sensorValueIdx + 4].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+        //    printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "A")) {
+            // printBMP(width, height, frame_buffer);
+            net_shift_hor -= sensor_values[sensorValueIdx + 4].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "S")) {
+            net_shift_ver -= sensor_values[sensorValueIdx + 4].value;
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+            // printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "D")) {
+            net_shift_hor += sensor_values[sensorValueIdx + 4].value;
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CW")) {
+            int value = sensor_values[sensorValueIdx + 4].value;
+            net_rotate += value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "CCW")) {
+            int value = sensor_values[sensorValueIdx + 4].value;
+            net_rotate -= value;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear mirror cache--------- */
+            if (net_mirror_x == 1) {
+                processMirrorX();
+                net_mirror_x = 0;
+            }
+            
+            if (net_mirror_y == 1) {
+                processMirrorY();
+                net_mirror_y = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MX")) {
+            net_mirror_x = net_mirror_x ^ 1;
+            /* ---------Clear shift cache--------- */
+            if (net_shift_hor > 0) {
+                processMoveRight(net_shift_hor);
+                net_shift_hor = 0;
+            }
+            else if (net_shift_hor < 0) {
+                processMoveLeft(-net_shift_hor);
+                net_shift_hor = 0;
+            }
+            if (net_shift_ver > 0) {
+                processMoveUp(net_shift_ver);
+                net_shift_ver = 0;
+            }
+            else if (net_shift_ver < 0) {
+                processMoveDown(-net_shift_ver);
+                net_shift_ver = 0;
+            }
+
+            /* ---------Clear rotate cache--------- */
+            if (net_rotate > 0) {
+                processRotateCW(net_rotate % 4);
+                net_rotate = 0;
+            }
+            else if (net_rotate < 0) {
+                processRotateCW(4 - (-net_rotate % 4));
+                net_rotate = 0;
+            }
+//            printBMP(width, height, frame_buffer);
+        } else if (!strcmp(sk, "MY")) {
             net_mirror_y = net_mirror_y ^ 1;
             /* ---------Clear shift cache--------- */
             if (net_shift_hor > 0) {
@@ -1516,6 +2489,7 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
             verifyFrame(frame_buffer, g_width, g_width, grading_mode);
         }
     }
+
     deallocateFrame(frame_buffer);
     return;
 }

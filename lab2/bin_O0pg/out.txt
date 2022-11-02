@@ -1,0 +1,486 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 45.46     11.11    11.11      688     0.02     0.03  processRotateCWReference
+ 39.61     20.79     9.68     2180     0.00     0.00  copyFrame
+  3.40     21.62     0.83 86872885     0.00     0.00  get_counter
+  2.60     22.26     0.64 86872896     0.00     0.00  access_counter
+  1.96     22.74     0.48       72     0.01     0.01  processMoveUpReference
+  1.64     23.14     0.40      100     0.00     0.01  processMoveLeftReference
+  1.60     23.53     0.39       92     0.00     0.01  processMoveRightReference
+  1.27     23.84     0.31        3     0.10     0.59  callibrate
+  0.86     24.05     0.21       44     0.00     0.01  processMirrorXReference
+  0.82     24.25     0.20       72     0.00     0.01  processMoveDownReference
+  0.57     24.39     0.14       28     0.01     0.01  processMirrorYReference
+  0.12     24.42     0.03       11     0.00     0.00  start_counter
+  0.08     24.44     0.02        1     0.02     0.02  loadbmp_decode_file
+  0.02     24.44     0.01                             set_fcyc_epsilon
+  0.00     24.44     0.00      991     0.00     0.00  allocateFrame
+  0.00     24.44     0.00      986     0.00     0.00  deallocateFrame
+  0.00     24.44     0.00       72     0.00     0.00  processRotateCCWReference
+  0.00     24.44     0.00       48     0.00     0.00  processMirrorY
+  0.00     24.44     0.00       48     0.00     0.00  processMoveUp
+  0.00     24.44     0.00       48     0.00     0.00  processRotateCW
+  0.00     24.44     0.00       30     0.00     0.00  processMoveLeft
+  0.00     24.44     0.00       24     0.00     0.00  processRotateCW1
+  0.00     24.44     0.00       24     0.00     0.00  update_frame_buffer
+  0.00     24.44     0.00       24     0.00     0.00  verifyFrame
+  0.00     24.44     0.00       18     0.00     0.00  processMirrorX
+  0.00     24.44     0.00       18     0.00     0.00  processMoveRight
+  0.00     24.44     0.00       16     0.00     0.00  recordFrame
+  0.00     24.44     0.00        8     0.00     0.00  add_sample
+  0.00     24.44     0.00        8     0.00     0.00  clear
+  0.00     24.44     0.00        8     0.00     0.00  get_comp_counter
+  0.00     24.44     0.00        8     0.00     0.00  has_converged
+  0.00     24.44     0.00        8     0.00     0.23  start_comp_counter
+  0.00     24.44     0.00        6     0.00     0.00  implementation_driver
+  0.00     24.44     0.00        6     0.00     0.00  processRotateCW2
+  0.00     24.44     0.00        6     0.00     0.00  processRotateCW3
+  0.00     24.44     0.00        6     0.00     0.00  set_image_bounds
+  0.00     24.44     0.00        5     0.00     0.00  implementation_driver_wraper
+  0.00     24.44     0.00        4     0.00     5.64  implementation_driver_reference
+  0.00     24.44     0.00        3     0.00     5.64  implementation_driver_reference_wraper
+  0.00     24.44     0.00        2     0.00     9.38  fcyc_v
+  0.00     24.44     0.00        2     0.00     0.00  init_sampler
+  0.00     24.44     0.00        2     0.00     0.00  set_fcyc_cache_size
+  0.00     24.44     0.00        2     0.00     0.00  set_fcyc_clear_cache
+  0.00     24.44     0.00        2     0.00     0.00  set_fcyc_compensate
+  0.00     24.44     0.00        1     0.00     0.00  print_team_info
+  0.00     24.44     0.00        1     0.00     0.00  verifiedAllFrames
+  0.00     24.44     0.00        1     0.00     0.00  verifiedAllFramesGrading
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.04% of 24.44 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.00   24.44                 main [1]
+                0.00   18.76       2/2           fcyc_v [5]
+                0.00    5.64       1/4           implementation_driver_reference [2]
+                0.02    0.00       1/1           loadbmp_decode_file [21]
+                0.02    0.00       4/2180        copyFrame [7]
+                0.00    0.00       2/2           set_fcyc_clear_cache [46]
+                0.00    0.00       2/2           set_fcyc_cache_size [45]
+                0.00    0.00       2/2           set_fcyc_compensate [47]
+                0.00    0.00       1/1           print_team_info [48]
+                0.00    0.00       1/991         allocateFrame [25]
+                0.00    0.00       1/1           verifiedAllFramesGrading [50]
+                0.00    0.00       1/6           implementation_driver [40]
+                0.00    0.00       1/1           verifiedAllFrames [49]
+-----------------------------------------------
+                0.00    5.64       1/4           main [1]
+                0.00   16.92       3/4           implementation_driver_reference_wraper [6]
+[2]     92.3    0.00   22.56       4         implementation_driver_reference [2]
+                6.02    4.47      52/96          processRotateCCWReference <cycle 2> [27]
+                5.09    3.79      44/96          processRotateCWReference <cycle 2> [4]
+                0.20    0.56      72/72          processMoveDownReference [13]
+                0.43    0.30      68/124         processMoveLeftReference <cycle 1> [14]
+                0.36    0.25      56/124         processMoveRightReference <cycle 1> [15]
+                0.21    0.20      44/44          processMirrorXReference [17]
+                0.24    0.16      36/72          processMoveUpReference [12]
+                0.14    0.12      28/28          processMirrorYReference [18]
+                0.00    0.02      16/16          recordFrame [22]
+-----------------------------------------------
+[3]     79.3   11.11    8.26      96+664     <cycle 2 as a whole> [3]
+               11.11    8.26     688             processRotateCWReference <cycle 2> [4]
+                0.00    0.00      72             processRotateCCWReference <cycle 2> [27]
+-----------------------------------------------
+                                 644             processRotateCCWReference <cycle 2> [27]
+                5.09    3.79      44/96          implementation_driver_reference [2]
+[4]     79.3   11.11    8.26     688         processRotateCWReference <cycle 2> [4]
+                8.26    0.00    1860/2180        copyFrame [7]
+                0.00    0.00     668/991         allocateFrame [25]
+                0.00    0.00     668/986         deallocateFrame [26]
+                                  20             processRotateCCWReference <cycle 2> [27]
+-----------------------------------------------
+                0.00   18.76       2/2           main [1]
+[5]     76.8    0.00   18.76       2         fcyc_v [5]
+                0.00   16.93       3/3           implementation_driver_reference_wraper [6]
+                0.00    1.81       8/8           start_comp_counter [8]
+                0.00    0.02       5/5           implementation_driver_wraper [20]
+                0.00    0.00       8/8           get_comp_counter [24]
+                0.00    0.00       8/8           clear [38]
+                0.00    0.00       8/8           add_sample [37]
+                0.00    0.00       8/8           has_converged [39]
+                0.00    0.00       2/2           init_sampler [44]
+-----------------------------------------------
+                0.00   16.93       3/3           fcyc_v [5]
+[6]     69.3    0.00   16.93       3         implementation_driver_reference_wraper [6]
+                0.00   16.92       3/4           implementation_driver_reference [2]
+                0.01    0.00       3/2180        copyFrame [7]
+                0.00    0.00       3/991         allocateFrame [25]
+                0.00    0.00       3/986         deallocateFrame [26]
+-----------------------------------------------
+                0.01    0.00       3/2180        implementation_driver_reference_wraper [6]
+                0.02    0.00       4/2180        main [1]
+                0.02    0.00       4/2180        recordFrame [22]
+                0.02    0.00       5/2180        implementation_driver_wraper [20]
+                0.12    0.00      28/2180        processMirrorYReference [18]
+                0.16    0.00      36/2180        processMoveDownReference [13]
+                0.20    0.00      44/2180        processMirrorXReference [17]
+                0.27    0.00      60/2180        processMoveRightReference <cycle 1> [15]
+                0.28    0.00      64/2180        processMoveLeftReference <cycle 1> [14]
+                0.32    0.00      72/2180        processMoveUpReference [12]
+                8.26    0.00    1860/2180        processRotateCWReference <cycle 2> [4]
+[7]     39.6    9.68    0.00    2180         copyFrame [7]
+-----------------------------------------------
+                0.00    1.81       8/8           fcyc_v [5]
+[8]      7.4    0.00    1.81       8         start_comp_counter [8]
+                0.31    1.47       3/3           callibrate [9]
+                0.02    0.00       8/11          start_counter [19]
+-----------------------------------------------
+                0.31    1.47       3/3           start_comp_counter [8]
+[9]      7.3    0.31    1.47       3         callibrate [9]
+                0.83    0.64 86872877/86872885     get_counter [10]
+                0.01    0.00       3/11          start_counter [19]
+-----------------------------------------------
+                0.00    0.00       8/86872885     get_comp_counter [24]
+                0.83    0.64 86872877/86872885     callibrate [9]
+[10]     6.0    0.83    0.64 86872885         get_counter [10]
+                0.64    0.00 86872885/86872896     access_counter [16]
+-----------------------------------------------
+[11]     5.5    0.79    0.55     124+68      <cycle 1 as a whole> [11]
+                0.40    0.28     100             processMoveLeftReference <cycle 1> [14]
+                0.39    0.27      92             processMoveRightReference <cycle 1> [15]
+-----------------------------------------------
+                0.24    0.16      36/72          processMoveDownReference [13]
+                0.24    0.16      36/72          implementation_driver_reference [2]
+[12]     3.3    0.48    0.32      72         processMoveUpReference [12]
+                0.32    0.00      72/2180        copyFrame [7]
+                0.00    0.00      72/991         allocateFrame [25]
+                0.00    0.00      72/986         deallocateFrame [26]
+-----------------------------------------------
+                0.20    0.56      72/72          implementation_driver_reference [2]
+[13]     3.1    0.20    0.56      72         processMoveDownReference [13]
+                0.24    0.16      36/72          processMoveUpReference [12]
+                0.16    0.00      36/2180        copyFrame [7]
+                0.00    0.00      36/991         allocateFrame [25]
+                0.00    0.00      36/986         deallocateFrame [26]
+-----------------------------------------------
+                                  32             processMoveRightReference <cycle 1> [15]
+                0.43    0.30      68/124         implementation_driver_reference [2]
+[14]     2.8    0.40    0.28     100         processMoveLeftReference <cycle 1> [14]
+                0.28    0.00      64/2180        copyFrame [7]
+                0.00    0.00      64/991         allocateFrame [25]
+                0.00    0.00      64/986         deallocateFrame [26]
+                                  36             processMoveRightReference <cycle 1> [15]
+-----------------------------------------------
+                                  36             processMoveLeftReference <cycle 1> [14]
+                0.36    0.25      56/124         implementation_driver_reference [2]
+[15]     2.7    0.39    0.27      92         processMoveRightReference <cycle 1> [15]
+                0.27    0.00      60/2180        copyFrame [7]
+                0.00    0.00      60/991         allocateFrame [25]
+                0.00    0.00      60/986         deallocateFrame [26]
+                                  32             processMoveLeftReference <cycle 1> [14]
+-----------------------------------------------
+                0.00    0.00      11/86872896     start_counter [19]
+                0.64    0.00 86872885/86872896     get_counter [10]
+[16]     2.6    0.64    0.00 86872896         access_counter [16]
+-----------------------------------------------
+                0.21    0.20      44/44          implementation_driver_reference [2]
+[17]     1.7    0.21    0.20      44         processMirrorXReference [17]
+                0.20    0.00      44/2180        copyFrame [7]
+                0.00    0.00      44/991         allocateFrame [25]
+                0.00    0.00      44/986         deallocateFrame [26]
+-----------------------------------------------
+                0.14    0.12      28/28          implementation_driver_reference [2]
+[18]     1.1    0.14    0.12      28         processMirrorYReference [18]
+                0.12    0.00      28/2180        copyFrame [7]
+                0.00    0.00      28/991         allocateFrame [25]
+                0.00    0.00      28/986         deallocateFrame [26]
+-----------------------------------------------
+                0.01    0.00       3/11          callibrate [9]
+                0.02    0.00       8/11          start_comp_counter [8]
+[19]     0.1    0.03    0.00      11         start_counter [19]
+                0.00    0.00      11/86872896     access_counter [16]
+-----------------------------------------------
+                0.00    0.02       5/5           fcyc_v [5]
+[20]     0.1    0.00    0.02       5         implementation_driver_wraper [20]
+                0.02    0.00       5/2180        copyFrame [7]
+                0.00    0.00       5/991         allocateFrame [25]
+                0.00    0.00       5/986         deallocateFrame [26]
+                0.00    0.00       5/6           implementation_driver [40]
+-----------------------------------------------
+                0.02    0.00       1/1           main [1]
+[21]     0.1    0.02    0.00       1         loadbmp_decode_file [21]
+-----------------------------------------------
+                0.00    0.02      16/16          implementation_driver_reference [2]
+[22]     0.1    0.00    0.02      16         recordFrame [22]
+                0.02    0.00       4/2180        copyFrame [7]
+                0.00    0.00       4/991         allocateFrame [25]
+-----------------------------------------------
+                                                 <spontaneous>
+[23]     0.0    0.01    0.00                 set_fcyc_epsilon [23]
+-----------------------------------------------
+                0.00    0.00       8/8           fcyc_v [5]
+[24]     0.0    0.00    0.00       8         get_comp_counter [24]
+                0.00    0.00       8/86872885     get_counter [10]
+-----------------------------------------------
+                0.00    0.00       1/991         main [1]
+                0.00    0.00       3/991         implementation_driver_reference_wraper [6]
+                0.00    0.00       4/991         recordFrame [22]
+                0.00    0.00       5/991         implementation_driver_wraper [20]
+                0.00    0.00       6/991         implementation_driver [40]
+                0.00    0.00      28/991         processMirrorYReference [18]
+                0.00    0.00      36/991         processMoveDownReference [13]
+                0.00    0.00      44/991         processMirrorXReference [17]
+                0.00    0.00      60/991         processMoveRightReference <cycle 1> [15]
+                0.00    0.00      64/991         processMoveLeftReference <cycle 1> [14]
+                0.00    0.00      72/991         processMoveUpReference [12]
+                0.00    0.00     668/991         processRotateCWReference <cycle 2> [4]
+[25]     0.0    0.00    0.00     991         allocateFrame [25]
+-----------------------------------------------
+                0.00    0.00       3/986         implementation_driver_reference_wraper [6]
+                0.00    0.00       5/986         implementation_driver_wraper [20]
+                0.00    0.00       6/986         implementation_driver [40]
+                0.00    0.00      28/986         processMirrorYReference [18]
+                0.00    0.00      36/986         processMoveDownReference [13]
+                0.00    0.00      44/986         processMirrorXReference [17]
+                0.00    0.00      60/986         processMoveRightReference <cycle 1> [15]
+                0.00    0.00      64/986         processMoveLeftReference <cycle 1> [14]
+                0.00    0.00      72/986         processMoveUpReference [12]
+                0.00    0.00     668/986         processRotateCWReference <cycle 2> [4]
+[26]     0.0    0.00    0.00     986         deallocateFrame [26]
+-----------------------------------------------
+                                  20             processRotateCWReference <cycle 2> [4]
+                6.02    4.47      52/96          implementation_driver_reference [2]
+[27]     0.0    0.00    0.00      72         processRotateCCWReference <cycle 2> [27]
+                                 644             processRotateCWReference <cycle 2> [4]
+-----------------------------------------------
+                0.00    0.00       6/48          processRotateCW2 [41]
+                0.00    0.00      18/48          implementation_driver [40]
+                0.00    0.00      24/48          processRotateCW1 [32]
+[28]     0.0    0.00    0.00      48         processMirrorY [28]
+-----------------------------------------------
+                0.00    0.00      48/48          implementation_driver [40]
+[29]     0.0    0.00    0.00      48         processMoveUp [29]
+-----------------------------------------------
+                0.00    0.00      48/48          implementation_driver [40]
+[30]     0.0    0.00    0.00      48         processRotateCW [30]
+                0.00    0.00      24/24          processRotateCW1 [32]
+                0.00    0.00       6/6           processRotateCW2 [41]
+                0.00    0.00       6/6           processRotateCW3 [42]
+-----------------------------------------------
+                0.00    0.00      30/30          implementation_driver [40]
+[31]     0.0    0.00    0.00      30         processMoveLeft [31]
+-----------------------------------------------
+                0.00    0.00      24/24          processRotateCW [30]
+[32]     0.0    0.00    0.00      24         processRotateCW1 [32]
+                0.00    0.00      24/48          processMirrorY [28]
+-----------------------------------------------
+                0.00    0.00      24/24          implementation_driver [40]
+[33]     0.0    0.00    0.00      24         update_frame_buffer [33]
+-----------------------------------------------
+                0.00    0.00      24/24          implementation_driver [40]
+[34]     0.0    0.00    0.00      24         verifyFrame [34]
+-----------------------------------------------
+                0.00    0.00       6/18          processRotateCW2 [41]
+                0.00    0.00       6/18          processRotateCW3 [42]
+                0.00    0.00       6/18          implementation_driver [40]
+[35]     0.0    0.00    0.00      18         processMirrorX [35]
+-----------------------------------------------
+                0.00    0.00      18/18          implementation_driver [40]
+[36]     0.0    0.00    0.00      18         processMoveRight [36]
+-----------------------------------------------
+                0.00    0.00       8/8           fcyc_v [5]
+[37]     0.0    0.00    0.00       8         add_sample [37]
+-----------------------------------------------
+                0.00    0.00       8/8           fcyc_v [5]
+[38]     0.0    0.00    0.00       8         clear [38]
+-----------------------------------------------
+                0.00    0.00       8/8           fcyc_v [5]
+[39]     0.0    0.00    0.00       8         has_converged [39]
+-----------------------------------------------
+                0.00    0.00       1/6           main [1]
+                0.00    0.00       5/6           implementation_driver_wraper [20]
+[40]     0.0    0.00    0.00       6         implementation_driver [40]
+                0.00    0.00      48/48          processRotateCW [30]
+                0.00    0.00      48/48          processMoveUp [29]
+                0.00    0.00      30/30          processMoveLeft [31]
+                0.00    0.00      24/24          update_frame_buffer [33]
+                0.00    0.00      24/24          verifyFrame [34]
+                0.00    0.00      18/48          processMirrorY [28]
+                0.00    0.00      18/18          processMoveRight [36]
+                0.00    0.00       6/991         allocateFrame [25]
+                0.00    0.00       6/6           set_image_bounds [43]
+                0.00    0.00       6/18          processMirrorX [35]
+                0.00    0.00       6/986         deallocateFrame [26]
+-----------------------------------------------
+                0.00    0.00       6/6           processRotateCW [30]
+[41]     0.0    0.00    0.00       6         processRotateCW2 [41]
+                0.00    0.00       6/18          processMirrorX [35]
+                0.00    0.00       6/48          processMirrorY [28]
+-----------------------------------------------
+                0.00    0.00       6/6           processRotateCW [30]
+[42]     0.0    0.00    0.00       6         processRotateCW3 [42]
+                0.00    0.00       6/18          processMirrorX [35]
+-----------------------------------------------
+                0.00    0.00       6/6           implementation_driver [40]
+[43]     0.0    0.00    0.00       6         set_image_bounds [43]
+-----------------------------------------------
+                0.00    0.00       2/2           fcyc_v [5]
+[44]     0.0    0.00    0.00       2         init_sampler [44]
+-----------------------------------------------
+                0.00    0.00       2/2           main [1]
+[45]     0.0    0.00    0.00       2         set_fcyc_cache_size [45]
+-----------------------------------------------
+                0.00    0.00       2/2           main [1]
+[46]     0.0    0.00    0.00       2         set_fcyc_clear_cache [46]
+-----------------------------------------------
+                0.00    0.00       2/2           main [1]
+[47]     0.0    0.00    0.00       2         set_fcyc_compensate [47]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[48]     0.0    0.00    0.00       1         print_team_info [48]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[49]     0.0    0.00    0.00       1         verifiedAllFrames [49]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[50]     0.0    0.00    0.00       1         verifiedAllFramesGrading [50]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+  [16] access_counter         [48] print_team_info         [4] processRotateCWReference
+  [37] add_sample             [35] processMirrorX         [22] recordFrame
+  [25] allocateFrame          [17] processMirrorXReference [45] set_fcyc_cache_size
+   [9] callibrate             [28] processMirrorY         [46] set_fcyc_clear_cache
+  [38] clear                  [18] processMirrorYReference [47] set_fcyc_compensate
+   [7] copyFrame              [13] processMoveDownReference [23] set_fcyc_epsilon
+  [26] deallocateFrame        [31] processMoveLeft        [43] set_image_bounds
+   [5] fcyc_v                 [14] processMoveLeftReference [8] start_comp_counter
+  [24] get_comp_counter       [36] processMoveRight       [19] start_counter
+  [10] get_counter            [15] processMoveRightReference [33] update_frame_buffer
+  [39] has_converged          [29] processMoveUp          [49] verifiedAllFrames
+  [40] implementation_driver  [12] processMoveUpReference [50] verifiedAllFramesGrading
+   [2] implementation_driver_reference [27] processRotateCCWReference [34] verifyFrame
+   [6] implementation_driver_reference_wraper [30] processRotateCW [11] <cycle 1>
+  [20] implementation_driver_wraper [32] processRotateCW1  [3] <cycle 2>
+  [44] init_sampler           [41] processRotateCW2
+  [21] loadbmp_decode_file    [42] processRotateCW3

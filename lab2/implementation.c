@@ -43,6 +43,14 @@ static unsigned char *initial_buffer_badc;
 /*used by cadb, dbca*/
 static unsigned char *initial_buffer_cadb;
 
+static unsigned char *initial_buffer_dbca;
+
+static unsigned char *initial_buffer_dcba;
+
+static unsigned char *initial_buffer_bdac;
+
+static unsigned char *initial_buffer_cdab;
+
 static int top_left_row;
 static int top_left_col;
 static int bottom_left_row;
@@ -355,6 +363,118 @@ void set_initial_buffers() {
         for (j = 0; j <= initial_top_right_col_rotated - initial_top_left_col_rotated; j++) {
             memcpy(&initial_buffer_cadb[dest_pixel_addr0 + (initial_top_right_col_rotated - j) * 3], &initial_buffer_acbd[initial_pixel_addr0 + (initial_top_left_col_rotated + j) * 3], 3);
         }
+    }
+    /* set dbca */
+    memset(initial_buffer_dbca, 255, g_width * g_actual_width);
+    i = 0;
+    bound_i = (initial_bottom_left_row_rotated - initial_top_left_row_rotated) >> 2;
+    bound_i = bound_i << 2;
+    register int width = (initial_top_right_col_rotated + 1) * 3 - initial_top_left_col_rotated * 3;
+    register int dest = initial_bottom_left_row_rotated * g_actual_width + g_actual_width + initial_bottom_left_col_rotated * 3;
+    register int initial = initial_top_left_row_rotated * g_actual_width - g_actual_width + initial_top_left_col_rotated * 3;
+    for (; i < bound_i; i += 4) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dbca[dest], &initial_buffer_cadb[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dbca[dest], &initial_buffer_cadb[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dbca[dest], &initial_buffer_cadb[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dbca[dest], &initial_buffer_cadb[initial], width);
+    }
+    for (; i <= initial_bottom_left_row_rotated - initial_top_left_row_rotated; i++) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dbca[dest], &initial_buffer_cadb[initial], width);
+    }
+    /* set dcba */
+    memset(initial_buffer_dcba, 255, g_width * g_actual_width);
+    i = 0;
+    bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+    bound_i = bound_i << 2;
+    width = (initial_top_right_col + 1) * 3 - initial_top_left_col * 3;
+    dest = initial_bottom_left_row * g_actual_width + g_actual_width + initial_bottom_left_col * 3;
+    initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
+    for (; i < bound_i; i += 4) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dcba[dest], &initial_buffer_badc[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dcba[dest], &initial_buffer_badc[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dcba[dest], &initial_buffer_badc[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dcba[dest], &initial_buffer_badc[initial], width);
+    }
+    for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_dcba[dest], &initial_buffer_badc[initial], width);
+    }
+    /* set cdab */
+    memset(initial_buffer_cdab, 255, g_width * g_actual_width);
+    i = 0;
+    bound_i = (initial_bottom_left_row - initial_top_left_row) >> 2;
+    bound_i = bound_i << 2;
+    width = (initial_top_right_col + 1) * 3 - initial_top_left_col * 3;
+    dest = initial_bottom_left_row * g_actual_width + g_actual_width + initial_bottom_left_col * 3;
+    initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
+    for (; i < bound_i; i += 4) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        // printf("i: %d\n", i);
+        memcpy(&initial_buffer_cdab[dest], &initial_buffer_abcd[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_cdab[dest], &initial_buffer_abcd[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_cdab[dest], &initial_buffer_abcd[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_cdab[dest], &initial_buffer_abcd[initial], width);
+    }
+    for (; i <= initial_bottom_left_row - initial_top_left_row; i++) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        // printf("NEW LOOP i: %d\n", i);
+        memcpy(&initial_buffer_cdab[dest], &initial_buffer_abcd[initial], width);
+    }
+    /* set bdac */
+    memset(initial_buffer_bdac, 255, g_width * g_actual_width);
+    i = 0;
+    bound_i = (initial_top_right_row_rotated - initial_top_left_row_rotated) >> 2;
+    bound_i = bound_i << 2;
+    width = (initial_top_right_col_rotated + 1) * 3 - initial_top_left_col_rotated * 3;
+    dest = initial_bottom_left_row_rotated * g_actual_width + g_actual_width + initial_bottom_left_col_rotated * 3;
+    initial = initial_top_left_row_rotated * g_actual_width - g_actual_width + initial_top_left_col_rotated * 3;
+    for (; i < bound_i; i += 4) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        // printf("i: %d\n", i);
+        memcpy(&initial_buffer_bdac[dest], &initial_buffer_acbd[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_bdac[dest], &initial_buffer_acbd[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_bdac[dest], &initial_buffer_acbd[initial], width);
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        memcpy(&initial_buffer_bdac[dest], &initial_buffer_acbd[initial], width);
+    }
+    for (; i <= initial_bottom_left_row_rotated - initial_top_left_row_rotated; i++) {
+        dest -= g_actual_width;
+        initial += g_actual_width;
+        // printf("NEW LOOP i: %d\n", i);
+        memcpy(&initial_buffer_bdac[dest], &initial_buffer_acbd[initial], width);
     }
 }
 /*
@@ -948,547 +1068,77 @@ void update_frame_buffer(unsigned char *new_frame) {
     if (ABCD()) {
         // printf("ABCD!!!!!\n");
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = top_left_row * g_actual_width - g_actual_width + top_left_col * 3;
-        register int initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
-        for (; i < bound; i += 16) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-        }
+        register int initial_start = initial_top_left_row * g_actual_width + initial_top_left_col * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row * g_actual_width + (initial_bottom_right_col + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_abcd[initial_start], width);
         // printBMP(g_width, g_width, new_frame);
         return;
     }
     else if (ACBD()) { // needs testing
         // printf("ACBD!!!!!\n");
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = top_left_row * g_actual_width - g_actual_width + top_left_col * 3;
-        register int initial = initial_top_left_row_rotated * g_actual_width - g_actual_width + initial_top_left_col_rotated * 3;
-        for (; i < bound; i += 16) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-        }
+        register int initial_start = initial_top_left_row_rotated * g_actual_width + initial_top_left_col_rotated * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row_rotated * g_actual_width + (initial_bottom_right_col_rotated + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_acbd[initial_start], width);
         // printBMP(g_width, g_width, new_frame);
         return;
     }
     else if (BADC()) {
         // printf("BADC!!!!!\n");
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = top_left_row * g_actual_width - g_actual_width + top_left_col * 3;
-        register int initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
-        for (; i < bound; i += 16) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-        }
+        register int initial_start = initial_top_left_row * g_actual_width + initial_top_left_col * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row * g_actual_width + (initial_bottom_right_col + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_badc[initial_start], width);
         // printBMP(g_width, g_width, new_frame);
         return;
     }
     else if (CADB()) { // rotate CW1
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = top_left_row * g_actual_width - g_actual_width + top_left_col * 3;
-        register int initial = initial_top_left_row_rotated * g_actual_width - g_actual_width + initial_top_left_col_rotated * 3;
-        for (; i < bound; i += 16) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest += g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-        }
+        register int initial_start = initial_top_left_row_rotated * g_actual_width + initial_top_left_col_rotated * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row_rotated * g_actual_width + (initial_bottom_right_col_rotated + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_cadb[initial_start], width);
         // printBMP(g_width, g_width, new_frame);
         return;
     }
     else if (DBCA()) {
         // printf("DBCA!!!!");
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = bottom_left_row * g_actual_width + g_actual_width + bottom_left_col * 3;
-        register int initial = initial_top_left_row_rotated * g_actual_width - g_actual_width + initial_top_left_col_rotated * 3;
-        for (; i < bound; i += 16) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_cadb[initial], width);
-        }
+        register int initial_start = initial_top_left_row_rotated * g_actual_width + initial_top_left_col_rotated * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row_rotated * g_actual_width + (initial_bottom_right_col_rotated + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_dbca[initial_start], width);
         // printBMP(g_width, g_width, new_frame);
         return;
     }
     else if (DCBA()) {
         // printf("DCBA!!!!");
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = bottom_left_row * g_actual_width + g_actual_width + top_left_col * 3;
-        register int initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
-        for (; i < bound; i += 16) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("NEW LOOP i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_badc[initial], width);
-        }
+        register int initial_start = initial_top_left_row * g_actual_width + initial_top_left_col * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row * g_actual_width + (initial_bottom_right_col + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_dcba[initial_start], width);
         return;
     }
     else if (CDAB()) {        
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = bottom_left_row * g_actual_width + g_actual_width + top_left_col * 3;
-        register int initial = initial_top_left_row * g_actual_width - g_actual_width + initial_top_left_col * 3;
-        for (; i < bound; i += 16) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("NEW LOOP i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_abcd[initial], width);
-        }
+        register int initial_start = initial_top_left_row * g_actual_width + initial_top_left_col * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row * g_actual_width + (initial_bottom_right_col + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_cdab[initial_start], width);
         return;
     }
     else if (BDAC()) {
         // printf("BDAC!!!!");
         memset(new_frame, 255, g_width * g_actual_width);
-        register int i = 0;
-        register unsigned int bound = (bottom_left_row - top_left_row) >> 4;
-        bound = bound << 4;
-        register int width = (top_right_col + 1) * 3 - top_left_col * 3;
-        register int dest = bottom_left_row * g_actual_width + g_actual_width + bottom_left_col * 3;
-        register int initial = initial_top_left_row_rotated * g_actual_width - g_actual_width + initial_top_left_col_rotated * 3;
-        for (; i < bound; i += 16) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-        }
-        for (; i <= bottom_left_row - top_left_row; i++) {
-            dest -= g_actual_width;
-            initial += g_actual_width;
-            // printf("NEW LOOP i: %d\n", i);
-            memcpy(&new_frame[dest], &initial_buffer_acbd[initial], width);
-        }
+        register int initial_start = initial_top_left_row_rotated * g_actual_width + initial_top_left_col_rotated * 3;
+        register int dest_start = top_left_row * g_actual_width + top_left_col * 3;
+        register int width = initial_bottom_right_row_rotated * g_actual_width + (initial_bottom_right_col_rotated + 1) * 3 - initial_start;
+        memcpy(&new_frame[dest_start], &initial_buffer_bdac[initial_start], width);
+        // printBMP(g_width, g_width, new_frame);
         return;
     }
     // else {
@@ -1502,7 +1152,7 @@ void update_frame_buffer(unsigned char *new_frame) {
  **********************************************************************************************************************/
 void print_team_info(){
     // Please modify this field with something interesting
-    char team_name[] = "Tuntunba";
+    char team_name[] = "吞吞爸";
     // Please fill in your information
     char student_first_name[] = "Jackson";
     char student_last_name[] = "Nie";
@@ -1553,6 +1203,14 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
 
     initial_buffer_cadb = allocateFrame(g_width, g_width);
 
+    initial_buffer_dbca = allocateFrame(g_width, g_width);
+
+    initial_buffer_dcba = allocateFrame(g_width, g_width);
+    
+    initial_buffer_bdac = allocateFrame(g_width, g_width);
+
+    initial_buffer_cdab = allocateFrame(g_width, g_width);
+
     /* buffer we use to verify frame */
     frame_buffer = allocateFrame(g_width, g_width);
 
@@ -1575,8 +1233,8 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
     sensor_values_count *= 0.04;
     sensor_values_count *= 25;
 
-    // TODO: check whether can modulo by 5
     for (; sensorValueIdx < sensor_values_count; sensorValueIdx += 5) {
+        // printf("hi.\n");
 //        printf("Processing sensor value #%d: %s, %d\n", sensorValueIdx, sensor_values[sensorValueIdx].key,
 //               sensor_values[sensorValueIdx].value);
         sk = sensor_values[sensorValueIdx].key;
@@ -2733,8 +2391,20 @@ void implementation_driver(struct kv *sensor_values, int sensor_values_count, un
         }
     }
     deallocateFrame(frame_buffer);
+    frame_buffer = NULL;
     deallocateFrame(initial_buffer_badc);
+    initial_buffer_badc = NULL;
     deallocateFrame(initial_buffer_acbd);
+    initial_buffer_acbd = NULL;
     deallocateFrame(initial_buffer_cadb);
+    initial_buffer_cadb = NULL;
+    deallocateFrame(initial_buffer_dbca);
+    initial_buffer_dbca = NULL;
+    deallocateFrame(initial_buffer_dcba);
+    initial_buffer_dcba = NULL; 
+    deallocateFrame(initial_buffer_bdac);
+    initial_buffer_bdac = NULL; 
+    deallocateFrame(initial_buffer_cdab);
+    initial_buffer_cdab = NULL;
     return;
 }

@@ -1,0 +1,100 @@
+Q1.
+It saves memory and reduces compile time. It also helps prevent confusion between data structures
+and methods when implementing/running different versions. Also, if data structures between versions
+have the same name in the same scope, then we must ifdef or else there will be a compile error due 
+to variable redefinition.
+
+Q2.
+This can be implemented without modifying the hash class if we know the internal implementation
+of the hash class. If we can't modify the hash class and we don't know the internal implementation
+then it cannot be implemented.
+
+Q3.
+No, as we need to sychronize count++ as well, which is outside the hashtable implementation, since 
+in this case we can solely modify the hash class, there is no way to sychronize the count++ outside.
+If we don't sychronize count++, there could be a race condition and count will then have awrong value.
+
+Q4.
+Yes, as in this case we can move count++ to lookup_and_insert_if_absent. Lock the lock at the 
+beginning of lookup_and_insert_if_absent, release the lock after count++. So the flow would be,
+Lock the lock, search for sample, if we find a sample, count++, release lock, return, 
+if we don't find a sample, create sample, insert, count++, release lock, return.
+
+Q5.
+Yes. Call lock list in the first line of lookup (lock the list with index HASH_INDEX(key, size_mask)), 
+and move count++ of sample into insert, then call unlock_list at the last line of insert after count++.
+
+Q6. 
+TM to be ignored.
+
+Q7.
+Pros: No sychronization is necessary. Don't need to deal with locks and the overhead
+of locking and unlocking locks, and so the threads can execute 100% in parallel, which will improve
+the performance and parallelization. 
+Cons: Very memory exhaustive. Since each thread has its own has table, we will be using at
+most 4x memory than the implementation with only 1 hash table, and this extra memory usage scales 
+linearly with the number of threads we create. This can also effect performance as when we start
+using more memory, the performance gain of parallelization will diminish, and the bottleneck will
+be all the cache misses and even disk swaps if we have so many tables that don't even fit in memory.
+
+Measurements:
+
+samples to skip: 50
++----------+----------+-------------+-----------+--------------+-----------+
+|          | Original | Global lock | List lock | Element lock | Reduction |
++----------+----------+-------------+-----------+--------------+-----------+
+| 1 thread | 6.714    | 6.756       | 6.914     | 6.98         | 6.704     |
++----------+----------+-------------+-----------+--------------+-----------+
+| 2 thread |          | 4.078       | 3.702     | 3.696        | 3.406     |
++----------+----------+-------------+-----------+--------------+-----------+
+| 4 thread |          | 4.64        | 1.976     | 1.97         | 1.706     |
++----------+----------+-------------+-----------+--------------+-----------+
+
+Q8.
++----------+----------+-------------+-----------+--------------+-----------+
+|          | Original | Global lock | List lock | Element lock | Reduction |
++----------+----------+-------------+-----------+--------------+-----------+
+| Overhead | 1        | 1.0063      | 1.03      | 1.04         | 0.999     |
++----------+----------+-------------+-----------+--------------+-----------+
+
+Q9.
+Global lock gets worse as there are more threads, the other parallel versions
+perform better as there are more threads. 
+Global lock performs worse as there are more threads because the overhead 
+out weighs parallelization performance gain, and this is because threads 
+are blocked very often whenever they want to access anything in the hash 
+table. The parallel part is limited to the code that doesn't access the 
+hash table, and so the performance gain dimishes because no matter how many
+threads there are, they will need to wait until others are finished with the 
+hash table, but overhead increases as we create more threads, and so when we
+have 4 threads, the overhead outweighs the performance gain and thus it is slower.
+
+Q10.
+samples to skip: 100
++----------+----------+-------------+-----------+--------------+-----------+
+|          | Original | Global lock | List lock | Element lock | Reduction |
++----------+----------+-------------+-----------+--------------+-----------+
+| 1 thread | 13.152   | 13.178      | 13.26     | 13.316       | 13.164    |
++----------+----------+-------------+-----------+--------------+-----------+
+| 2 thread |          | 7.184       | 6.858     | 6.826        | 6.624     |
++----------+----------+-------------+-----------+--------------+-----------+
+| 4 thread |          | 4.384       | 3.546     | 3.542        | 3.326     |
++----------+----------+-------------+-----------+--------------+-----------+
+We take longer time to terminate, as we now need to do an inner loop of 100
+instead of 50, so approximately we should take double the amount of time as 
+compared to 50. It is also noticeable that the global lock performance actually
+increases as we have more threads in this case, that is because, as mentioned,
+global lock can parallelize the code that doesn't access the hash table. In this
+case, the amount of time taken by the samples to skip loop (which doesn't access
+the hash table) has doubled, and so there is more parallelization to exploit there,
+and thus in this case performance gain outweighs the overhead.
+
+Q11.
+OptsRus should ship the element lock version. This is because it is the fastest
+aside from randtrack_reduction, and the amount of memory overhead does not 
+increase with the amount of threads created. 
+The reason they shouldn't ship randtrack_reduction is because the memory needed
+increases linearly with the number of threads. If clients with more than 4 cores
+want to use more than 4 threads, they could end up using more and more memory,
+and the extensive memory usage in randtrack_reduction will bottleneck performance.
+

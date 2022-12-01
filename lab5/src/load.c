@@ -37,9 +37,8 @@ static char* load_board_values(FILE* input, const int nrows, const int ncols)
       fscanf(input, "%c\n", &c);
       // fprintf(stdout, "%c\n", c);
       /* ASCII '0' is not zero; do the conversion */
-      char val = (c - '0') << 4;
       // assert(val == 0x10 || val == 0);
-      board[row_start + j] += val;
+      board[row_start + j] += ((c - '0') << 4);
       if (!IS_ALIVE(board[row_start + j])) {
         continue;
       }

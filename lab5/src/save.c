@@ -19,19 +19,12 @@ save_dimensions (FILE* output, const int nrows, const int ncols)
 static void
 save_board_values (FILE* output, const char board[], const int nrows, const int ncols)
 {
-  int err = 0;
   int i = 0;
 
   for (i = 0; i < nrows * ncols; i++)
     {
       /* ASCII '0' is not zero; do the conversion */
-      err = fprintf (output, "%c\n", board[i] + '0');
-      if (err < 0)
-	{
-	  fprintf (stderr, "*** Failed to write board item %d ***\n", i);
-	  fclose (output);
-	  exit (EXIT_FAILURE);
-	}
+      fprintf (output, "%c\n", board[i] + '0');
     }
 }
 

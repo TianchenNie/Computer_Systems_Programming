@@ -1,0 +1,40 @@
+rm -f gol.o life.o lifeseq.o load.o save.o  gol.verify.o life.o lifeseq.o load.o save.o  gol gol_verify bitboard.o random_bit.o initboard 
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" gol.c -o gol.o
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" life.c -o life.o
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" lifeseq.c -o lifeseq.o
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" load.c -o load.o
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" save.c -o save.o
+gcc -Wall -g -O3  -lm -pthread gol.o life.o lifeseq.o load.o save.o  -o gol 
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" bitboard.c -o bitboard.o
+gcc -c -Wall -g -O3  -DUSE_GETTIMEOFDAY  "-DCOMPILER=\"gcc\"" "-DFLAGS=\"-Wall -g -O3\"" random_bit.c -o random_bit.o
+gcc -Wall -g -O3  -lm -pthread bitboard.o random_bit.o -o initboard 
+Done test 1
+Done test 2
+Done test 3
+Done test 4
+Done test 5
+Done test 6
+Done test 7
+Done test 8
+Done test 9
+Done test 10
+Done test 11
+Done test 12
+Done test 13
+Done test 14
+Done test 15
+Done test 16
+Done test 17
+Done test 18
+Done test 19
+Done test 20
+Done test 21
+Done test 22
+Done test 23
+Done test 24
+Done test 25
+Done test 26
+Done test 27
+Done test 28
+Done test 29
+Done test 30

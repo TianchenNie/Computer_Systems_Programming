@@ -11,8 +11,7 @@ char* make_board (const int nrows, const int ncols)
   char* board = NULL;
 
   unsigned int area = nrows * ncols;
-  board = malloc(area);
-  memset(board, 0, area);
+  board = calloc(area, 1);
   assert(board != NULL);
   return board;
 }

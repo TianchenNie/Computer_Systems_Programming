@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "random_bit.h"
+
 static int
 to_int (int* num, const char* s)
 {

@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include <assert.h>
+
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 // cell: xxx alive=1,dead=0 num_neighbors
 #define NUM_NEIGHBOURS(cell) ((cell) & 0xF)
 #define IS_ALIVE(cell) ((cell) & 0x10)
@@ -15,9 +18,21 @@
  */
 static inline int 
 mod(const int x, const int m) {
-  return (x >= 0) ? (x % m) : ((x % m) + m);
+  return x >= 0 ? (x % m) : (x + m);
 }
 
+// static inline int 
+// mod(const int x, const int m) {
+//   if (likely(x >= 0) && x != m) {
+//     return x;
+//   } 
+//   else if (unlikely(x < 0)) {
+//     return x + m;
+//   }
+//   else if (unlikely(x == m)) {
+//     return 0;
+//   }
+// }
 
 /**
  * Given neighbor count and current state, return zero if cell will be

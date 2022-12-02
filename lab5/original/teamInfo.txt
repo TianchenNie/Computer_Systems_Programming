@@ -1,4 +1,4 @@
-teamName: alwdiguiashdlaw
-student1_fullName: Jackson Nie
-student1_studentNumber: 1005282409
-student1_email: tianchen.nie@mail.utoronto.ca
+teamName: xxx
+student1_fullName: xxx
+student1_studentNumber: 123456789
+student1_email: xxx@mail.utoronto.ca

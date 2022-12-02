@@ -458,7 +458,7 @@ void *game_of_life_thread(void *id) {
 	for (i = start_row; i < end_row; i++) {
 		row_start = i * num_cols;
 		for (j = 0; j < num_cols; j++) {
-			out_board[row_start + j] >>= 4;
+			out_board[row_start + j] = (out_board[row_start + j] >> 4) + '0';
 		}
 	}
 	return NULL;

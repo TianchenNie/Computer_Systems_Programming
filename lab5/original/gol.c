@@ -50,7 +50,8 @@ copy_board (char outboard[], const char inboard[], const int nrows, const int nc
   memmove (outboard, inboard, nrows * ncols * sizeof (char));
 }
 
-static int boards_equalp (const char b1[], const char b2[], const int nrows, const int ncols)
+static int
+boards_equalp (const char b1[], const char b2[], const int nrows, const int ncols)
 {
   int i;
   for (i = 0; i < nrows * ncols; i++)
@@ -60,8 +61,8 @@ static int boards_equalp (const char b1[], const char b2[], const int nrows, con
   return 1;
 }
 
-// ./gol <num-generations> <board input file> <board output file>
-int main (int argc, char* argv[])
+int 
+main (int argc, char* argv[])
 {
   /*
    * Set verifyp to 1 if you want to turn on verification.
@@ -82,46 +83,49 @@ int main (int argc, char* argv[])
   int err = 0;
 
   /* Parse command-line arguments */
-  if (argc < argc_min || argc > argc_max) {
-    fprintf(stderr, "*** Wrong number of command-line arguments; "
-        "got %d, need at least %d and no more than %d ***\n", 
-        argc - 1, argc_min - 1, argc_max - 1);
-    print_usage (argv[0]);
-    exit(EXIT_FAILURE);
-  }
+  if (argc < argc_min || argc > argc_max)
+    {
+      fprintf (stderr, "*** Wrong number of command-line arguments; "
+	       "got %d, need at least %d and no more than %d ***\n", 
+	       argc - 1, argc_min - 1, argc_max - 1);
+      print_usage (argv[0]);
+      exit (EXIT_FAILURE);
+    }
   
-  err = to_int(&gens_max, argv[1]);
-  if (err != 0) {
-    fprintf(stderr, "*** <num_generations> argument \'%s\' "
-        "must be a nonnegative integer! ***\n", argv[1]);
-    print_usage(argv[0]);
-    exit(EXIT_FAILURE);
-  }
+  err = to_int (&gens_max, argv[1]);
+  if (err != 0)
+    {
+      fprintf (stderr, "*** <num_generations> argument \'%s\' "
+	       "must be a nonnegative integer! ***\n", argv[1]);
+      print_usage (argv[0]);
+      exit (EXIT_FAILURE);
+    }
 
   /* Open input and output files */ 
-  input = fopen(argv[2], "r");
-  if (input == NULL) {
-    fprintf (stderr, "*** Failed to open input file \'%s\' for reading! ***\n", argv[2]);
-    print_usage (argv[0]);
-    exit (EXIT_FAILURE);
-  }
-
-  // check if we should output to stdout or to a specific file
-  if (argc < argc_max || strcmp(argv[3], "-") == 0) {
-    output = stdout;
-  }
-  else {
-    output = fopen(argv[3], "w");
-    if (output == NULL){
-      fprintf(stderr, "*** Failed to open output file \'%s\' for writing! ***\n", argv[3]);
+  input = fopen (argv[2], "r");
+  if (input == NULL)
+    {
+      fprintf (stderr, "*** Failed to open input file \'%s\' for reading! ***\n", argv[2]);
       print_usage (argv[0]);
-      exit(EXIT_FAILURE);
-	  }
-  }
+      exit (EXIT_FAILURE);
+    }
+
+  if (argc < argc_max || 0 == strcmp (argv[3], "-"))
+    output = stdout;
+  else
+    {
+      output = fopen (argv[3], "w");
+      if (output == NULL)
+	{
+	  fprintf (stderr, "*** Failed to open output file \'%s\' for writing! ***\n", argv[3]);
+	  print_usage (argv[0]);
+	  exit (EXIT_FAILURE);
+	}
+    }
 
   /* Load the initial board state from the input file */
-  inboard = load_board(input, &nrows, &ncols);
-  fclose(input);
+  inboard = load_board (input, &nrows, &ncols);
+  fclose (input);
 
   /* Create a second board for ping-ponging */
   outboard = make_board (nrows, ncols);

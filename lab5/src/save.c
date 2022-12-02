@@ -20,11 +20,11 @@ static void
 save_board_values (FILE* output, const char board[], const int nrows, const int ncols)
 {
   int i = 0;
-
-  for (i = 0; i < nrows * ncols; i++)
+  int area = nrows * ncols;
+  for (i = 0; i < area; i++)
     {
       /* ASCII '0' is not zero; do the conversion */
-      fprintf (output, "%c\n", board[i] + '0');
+      fprintf (output, "%c\n", board[i]);
     }
 }
 

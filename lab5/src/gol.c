@@ -70,6 +70,7 @@ int main(int argc, char* argv[]) {
   int gens_max = 0;
   char* inboard = NULL;
   char* outboard = NULL;
+  char* saveboard = NULL;
   char* checkboard = NULL;
   char* final_board = NULL;
   int nrows = 0;
@@ -120,6 +121,8 @@ int main(int argc, char* argv[]) {
 
   /* Create a second board for ping-ponging */
   outboard = make_board(nrows, ncols);
+  // saveboard = calloc(nrows * ncols * 2 + 1, sizeof(char));
+
 
   /* If we want to verify the result, then make a third board and copy
      the initial state into it */
@@ -160,6 +163,8 @@ int main(int argc, char* argv[]) {
   }
 
   /* Clean up */
+  if (saveboard != NULL) 
+    free(saveboard);
   if(inboard != NULL)
     free(inboard);
   if(outboard != NULL)

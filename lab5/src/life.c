@@ -33,7 +33,58 @@
 static char *in_board;
 static char *out_board;
 // contains indices of cells that have been change in prev iteration.
-static unsigned int* change_list;
+static unsigned int *change_list0;
+static unsigned int *change_list1;
+static unsigned int *change_list2;
+static unsigned int *change_list3;
+static unsigned int *change_list4;
+static unsigned int *change_list5;
+static unsigned int *change_list6;
+static unsigned int *change_list7;
+static unsigned int *change_list8;
+static unsigned int *change_list9;
+static unsigned int *change_list10;
+static unsigned int *change_list11;
+static unsigned int *change_list12;
+static unsigned int *change_list13;
+static unsigned int *change_list14;
+static unsigned int *change_list15;
+
+static unsigned int *cl_index0;
+static unsigned int *cl_index1;
+static unsigned int *cl_index2;
+static unsigned int *cl_index3;
+static unsigned int *cl_index4;
+static unsigned int *cl_index5;
+static unsigned int *cl_index6;
+static unsigned int *cl_index7;
+static unsigned int *cl_index8;
+static unsigned int *cl_index9;
+static unsigned int *cl_index10;
+static unsigned int *cl_index11;
+static unsigned int *cl_index12;
+static unsigned int *cl_index13;
+static unsigned int *cl_index14;
+static unsigned int *cl_index15;
+
+
+static pthread_mutex_t cl_lock0;
+static pthread_mutex_t cl_lock1;
+static pthread_mutex_t cl_lock2;
+static pthread_mutex_t cl_lock3;
+static pthread_mutex_t cl_lock4;
+static pthread_mutex_t cl_lock5;
+static pthread_mutex_t cl_lock6;
+static pthread_mutex_t cl_lock7;
+static pthread_mutex_t cl_lock8;
+static pthread_mutex_t cl_lock9;
+static pthread_mutex_t cl_lock10;
+static pthread_mutex_t cl_lock11;
+static pthread_mutex_t cl_lock12;
+static pthread_mutex_t cl_lock13;
+static pthread_mutex_t cl_lock14;
+static pthread_mutex_t cl_lock15;
+
 static pthread_mutex_t *per_thread_element_locks;
 static unsigned int num_rows;
 static unsigned int num_cols;
@@ -45,6 +96,119 @@ static pthread_cond_t thread_done_cond;
 static pthread_cond_t thread_go_cond;
 static pthread_mutex_t thread_go_mutex;
 
+static inline void initialize_change_lists(unsigned int nrows, unsigned int ncols) {
+	int thread_area = nrows / NUM_THREADS * ncols;
+	change_list0 = calloc(thread_area, sizeof(unsigned int));
+	change_list1 = calloc(thread_area, sizeof(unsigned int));
+	change_list2 = calloc(thread_area, sizeof(unsigned int));
+	change_list3 = calloc(thread_area, sizeof(unsigned int));
+	change_list4 = calloc(thread_area, sizeof(unsigned int));
+	change_list5 = calloc(thread_area, sizeof(unsigned int));
+	change_list6 = calloc(thread_area, sizeof(unsigned int));
+	change_list7 = calloc(thread_area, sizeof(unsigned int));
+	change_list8 = calloc(thread_area, sizeof(unsigned int));
+	change_list9 = calloc(thread_area, sizeof(unsigned int));
+	change_list10 = calloc(thread_area, sizeof(unsigned int));
+	change_list11 = calloc(thread_area, sizeof(unsigned int));
+	change_list12 = calloc(thread_area, sizeof(unsigned int));
+	change_list13 = calloc(thread_area, sizeof(unsigned int));
+	change_list14 = calloc(thread_area, sizeof(unsigned int));
+	change_list15 = calloc(thread_area, sizeof(unsigned int));
+	cl_index0 = calloc(1, sizeof(unsigned int));
+	cl_index1 = calloc(1, sizeof(unsigned int));
+	cl_index2 = calloc(1, sizeof(unsigned int));
+	cl_index3 = calloc(1, sizeof(unsigned int));
+	cl_index4 = calloc(1, sizeof(unsigned int));
+	cl_index5 = calloc(1, sizeof(unsigned int));
+	cl_index6 = calloc(1, sizeof(unsigned int));
+	cl_index7 = calloc(1, sizeof(unsigned int));
+	cl_index8 = calloc(1, sizeof(unsigned int));
+	cl_index9 = calloc(1, sizeof(unsigned int));
+	cl_index10 = calloc(1, sizeof(unsigned int));
+	cl_index11 = calloc(1, sizeof(unsigned int));
+	cl_index12 = calloc(1, sizeof(unsigned int));
+	cl_index13 = calloc(1, sizeof(unsigned int));
+	cl_index14 = calloc(1, sizeof(unsigned int));
+	cl_index15 = calloc(1, sizeof(unsigned int));
+	pthread_mutex_init(&cl_lock0, NULL);
+	pthread_mutex_init(&cl_lock1, NULL);
+	pthread_mutex_init(&cl_lock2, NULL);
+	pthread_mutex_init(&cl_lock3, NULL);
+	pthread_mutex_init(&cl_lock4, NULL);
+	pthread_mutex_init(&cl_lock5, NULL);
+	pthread_mutex_init(&cl_lock6, NULL);
+	pthread_mutex_init(&cl_lock7, NULL);
+	pthread_mutex_init(&cl_lock8, NULL);
+	pthread_mutex_init(&cl_lock9, NULL);
+	pthread_mutex_init(&cl_lock10, NULL);
+	pthread_mutex_init(&cl_lock11, NULL);
+	pthread_mutex_init(&cl_lock12, NULL);
+	pthread_mutex_init(&cl_lock13, NULL);
+	pthread_mutex_init(&cl_lock14, NULL);
+	pthread_mutex_init(&cl_lock15, NULL);
+}
+
+static inline unsigned int *get_change_list(int id) {
+	if (id == 0) return change_list0;
+	else if (id == 1) return change_list1;
+	else if (id == 2) return change_list2;
+	else if (id == 3) return change_list3;
+	else if (id == 4) return change_list4;
+	else if (id == 5) return change_list5;
+	else if (id == 6) return change_list6;
+	else if (id == 7) return change_list7;
+	else if (id == 8) return change_list8;
+	else if (id == 9) return change_list9;
+	else if (id == 10) return change_list10;
+	else if (id == 11) return change_list11;
+	else if (id == 12) return change_list12;
+	else if (id == 13) return change_list13;
+	else if (id == 14) return change_list14;
+	else if (id == 15) return change_list15;
+	return NULL;
+}
+
+static inline unsigned int *get_cl_index(int id) {
+	if (id == 0) return cl_index0;
+	else if (id == 1) return cl_index1;
+	else if (id == 2) return cl_index2;
+	else if (id == 3) return cl_index3;
+	else if (id == 4) return cl_index4;
+	else if (id == 5) return cl_index5;
+	else if (id == 6) return cl_index6;
+	else if (id == 7) return cl_index7;
+	else if (id == 8) return cl_index8;
+	else if (id == 9) return cl_index9;
+	else if (id == 10) return cl_index10;
+	else if (id == 11) return cl_index11;
+	else if (id == 12) return cl_index12;
+	else if (id == 13) return cl_index13;
+	else if (id == 14) return cl_index14;
+	else if (id == 15) return cl_index15;
+	return NULL;
+}
+
+static inline pthread_mutex_t *get_cl_lock(int id) {
+	if (id == 0) return &cl_lock0;
+	else if (id == 1) return &cl_lock1;
+	else if (id == 2) return &cl_lock2;
+	else if (id == 3) return &cl_lock3;
+	else if (id == 4) return &cl_lock4;
+	else if (id == 5) return &cl_lock5;
+	else if (id == 6) return &cl_lock6;
+	else if (id == 7) return &cl_lock7;
+	else if (id == 8) return &cl_lock8;
+	else if (id == 9) return &cl_lock9;
+	else if (id == 10) return &cl_lock10;
+	else if (id == 11) return &cl_lock11;
+	else if (id == 12) return &cl_lock12;
+	else if (id == 13) return &cl_lock13;
+	else if (id == 14) return &cl_lock14;
+	else if (id == 15) return &cl_lock15;
+	return NULL;
+}
+
+
 static inline int get_bottom_row_lock_index(int element_id, int thread_num_rows, int num_cols) {
 	return num_cols + (element_id - (thread_num_rows - 1) * num_cols);
 }
@@ -52,20 +216,46 @@ static inline int get_bottom_row_lock_index(int element_id, int thread_num_rows,
 void *game_of_life_thread(void *id) {
 	int myid = *(int *)id;
 	free(id);
-	char *inboard;
+	char *inboard = in_board;
 	char *outboard;
+	
+	unsigned int *prev_change_list = get_change_list(mod(myid - 1, NUM_THREADS));
+	unsigned int *my_change_list = get_change_list(myid);
+	unsigned int *next_change_list = get_change_list(mod(myid + 1, NUM_THREADS));
+	unsigned int *prev_cl_index = get_cl_index(mod(myid - 1, NUM_THREADS));
+	unsigned int *my_cl_index = get_cl_index(myid);
+	unsigned int *next_cl_index = get_cl_index(mod(myid + 1, NUM_THREADS));
+	pthread_mutex_t *prev_cl_lock = get_cl_lock(mod(myid - 1, NUM_THREADS));
+	pthread_mutex_t *my_cl_lock = get_cl_lock(myid);
+	pthread_mutex_t *next_cl_lock = get_cl_lock(mod(myid + 1, NUM_THREADS));
+	
 	int num_rows_to_handle = num_rows / NUM_THREADS;
 	int start_row = myid * num_rows_to_handle;
 	int end_row = start_row + num_rows_to_handle;
+	
 	int lock_start_index = myid * num_cols * 2;
 	int my_start_index = start_row * num_cols;
 	int last_thread_lock_start_index = (NUM_THREADS - 1) * num_cols * 2;
+
 	unsigned int prev_row_start;
 	unsigned int row_start;
 	unsigned int next_row_start;
 	char cell;
 	int curgen, i, j;
 	int gens_max = num_gens;
+	unsigned int *swap_change_list = calloc(num_rows_to_handle * num_cols, sizeof(unsigned int));
+	unsigned int swap_cl_index = 0;
+	// initializ
+	for (i = start_row; i < end_row; i++) {
+		row_start = i * num_cols;
+		for (j = 0; j < num_cols; j++) {
+			if (!IS_ALIVE(inboard[row_start + j])) {
+				continue;
+			}
+			swap_change_list[swap_cl_index++] = SET_ROW_COL(i, j);
+		}
+	}
+
 	for (curgen = 0; curgen < gens_max; curgen++) {
 		inboard = in_board;
 		outboard = out_board;
@@ -474,7 +664,7 @@ char *game_of_life(char* outboard, char* inboard, const int nrows, const int nco
 	num_gens = gens_max;
 	gen = 0;
 	char *temp;
-
+	// printf("%d\n", sizeof(pthread_mutex_t));
 	pthread_mutex_init(&thread_done_mutex, NULL);
 	pthread_cond_init(&thread_done_cond, NULL);
 	pthread_mutex_init(&thread_go_mutex, NULL);
@@ -486,11 +676,14 @@ char *game_of_life(char* outboard, char* inboard, const int nrows, const int nco
 	for (i = 0; i < total_num_locks; i++) {
 		pthread_mutex_init(&per_thread_element_locks[i], NULL);
 	}
+
+	initialize_change_lists(nrows, ncols);
 	// fprintf(stdout, "Finished lock init.\n");
 	// fflush(stdout);
 	pthread_t threads[NUM_THREADS];
 	cpu_set_t cpusets[NUM_THREADS];
 	pthread_mutex_lock(&thread_done_mutex);
+
 	for (int i = 0; i < NUM_THREADS; i++) {
 		CPU_ZERO(&cpusets[i]);
 		CPU_SET(i, &cpusets[i]);

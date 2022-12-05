@@ -188,8 +188,8 @@ static unsigned int num_cols;
 static unsigned int num_gens;
 static unsigned int gen;
 static unsigned int threads_done;
-// static pthread_mutex_t update_neighbour_count_mutex;
-// static pthread_cond_t update_neighbour_count_cond;
+static pthread_mutex_t update_neighbour_count_mutex;
+static pthread_cond_t update_neighbour_count_cond;
 static pthread_mutex_t thread_done_mutex;
 static pthread_cond_t thread_done_cond;
 static pthread_cond_t thread_go_cond;
@@ -570,10 +570,7 @@ void *game_of_life_thread(void *id) {
 	int myid = *(int *)id;
 	free(id);
 	char *inboard = in_board;
-	cpu_set_t my_core;
-	CPU_ZERO(&my_core);
-	CPU_SET(myid, &my_core);
-	pthread_setaffinity_np(pthread_self(), sizeof(my_core), &my_core);
+	
 	unsigned int *prev_change_list_to_write = get_prev_thread_change_list_to_write(myid);
 	unsigned int *next_change_list_to_write = get_next_thread_change_list_to_write(myid);
 	unsigned int *my_change_list = get_change_list(myid);
@@ -587,8 +584,6 @@ void *game_of_life_thread(void *id) {
 	unsigned int *next_cl_index_to_read = get_next_thread_my_cl_index_to_read(myid);
 	
 	int num_rows_to_handle = num_rows / NUM_THREADS;
-	// fprintf(stdout, "NUM ROWS TO HANDLE: %d\n", num_rows_to_handle);
-	// fflush(stdout);
 	int start_row = myid * num_rows_to_handle;
 	int end_row = start_row + num_rows_to_handle;
 	unsigned int my_area = num_rows_to_handle * num_cols;
@@ -615,19 +610,6 @@ void *game_of_life_thread(void *id) {
 			}
 			swap_change_list[swap_cl_index++] = SET_ROW_COL(i, j);
 		}
-	}
-
-	pthread_mutex_lock(&thread_done_mutex);
-	threads_done++;
-
-	if (likely(threads_done != NUM_THREADS)) {
-		pthread_cond_wait(&thread_done_cond, &thread_done_mutex);
-		pthread_mutex_unlock(&thread_done_mutex);
-	}
-	else if (unlikely(threads_done == NUM_THREADS)) {
-		threads_done = 0;
-		pthread_cond_broadcast(&thread_done_cond);
-		pthread_mutex_unlock(&thread_done_mutex);
 	}
 
 	for (curgen = 0; curgen < gens_max; curgen++) {
@@ -794,10 +776,7 @@ void *game_of_life_thread(void *id) {
 					prev_thread_lock_index = my_lock_start_index - num_cols;
 				}
 				else if (unlikely(start_row == 0)) {
-					// assert(myid == 0);
-					// assert(northrow == num_rows - 1);
 					prev_thread_lock_index = last_thread_lock_start_index + num_cols;
-					// assert(prev_thread_lock_index + 1024 == num_cols * NUM_THREADS * 2);
 				}
 				
 				pthread_mutex_lock(&per_thread_element_locks[prev_thread_lock_index + westcol]);
@@ -924,17 +903,17 @@ void *game_of_life_thread(void *id) {
 			}
 		}
 		// increment number of threads done.
-		pthread_mutex_lock(&thread_done_mutex);
+		pthread_mutex_lock(&update_neighbour_count_mutex);
 		threads_done++;
 
 		if (likely(threads_done != NUM_THREADS)) {
-			pthread_cond_wait(&thread_done_cond, &thread_done_mutex);
-			pthread_mutex_unlock(&thread_done_mutex);
+			pthread_cond_wait(&update_neighbour_count_cond, &update_neighbour_count_mutex);
+			pthread_mutex_unlock(&update_neighbour_count_mutex);
 		}
 		else if (unlikely(threads_done == NUM_THREADS)) {
 			threads_done = 0;
-			pthread_cond_broadcast(&thread_done_cond);
-			pthread_mutex_unlock(&thread_done_mutex);
+			pthread_cond_broadcast(&update_neighbour_count_cond);
+			pthread_mutex_unlock(&update_neighbour_count_mutex);
 		}
 
 		// update all neighbour counts of change list neighbors
@@ -1295,7 +1274,7 @@ void *game_of_life_thread(void *id) {
 			int row_col = my_change_list_to_read_from_next_thread[j];
 			my_change_list[(*my_cl_index)++] = row_col;
 			row = GET_ROW(row_col);
-			// assert(row != (end_row - 1));
+			// assert(row == (end_row - 1));
 			col = GET_COL(row_col);
 			westcol = mod(col-1, num_cols);
 			eastcol = mod(col+1, num_cols);
@@ -1417,15 +1396,14 @@ char *game_of_life(char* inboard, const int nrows, const int ncols, const int ge
 	num_cols = ncols;
 	num_rows = nrows;
 	num_gens = gens_max;
-	threads_done = 0;
 	gen = 0;
 	// printf("%d\n", sizeof(pthread_mutex_t));
 	pthread_mutex_init(&thread_done_mutex, NULL);
 	pthread_cond_init(&thread_done_cond, NULL);
 	pthread_mutex_init(&thread_go_mutex, NULL);
 	pthread_cond_init(&thread_go_cond, NULL);
-	// pthread_mutex_init(&update_neighbour_count_mutex, NULL);
-	// pthread_cond_init(&update_neighbour_count_cond, NULL);
+	pthread_mutex_init(&update_neighbour_count_mutex, NULL);
+	pthread_cond_init(&update_neighbour_count_cond, NULL);
 
 	int total_num_locks = NUM_THREADS * 2 * ncols;
 	per_thread_element_locks = malloc(sizeof(pthread_mutex_t) * total_num_locks);
@@ -1438,22 +1416,22 @@ char *game_of_life(char* inboard, const int nrows, const int ncols, const int ge
 	// fprintf(stdout, "Finished lock init.\n");
 	// fflush(stdout);
 	pthread_t threads[NUM_THREADS];
-	// cpu_set_t cpusets[NUM_THREADS];
+	cpu_set_t cpusets[NUM_THREADS];
 	// pthread_mutex_lock(&thread_done_mutex);
 
 	for (i = 0; i < NUM_THREADS; i++) {
-		// CPU_ZERO(&cpusets[i]);
-		// CPU_SET(i, &cpusets[i]);
+		CPU_ZERO(&cpusets[i]);
+		CPU_SET(i, &cpusets[i]);
 		
 		int *id = malloc(sizeof(int));
 		*id = i;
 		pthread_create(&threads[i], NULL, &game_of_life_thread, id);
-		// pthread_setaffinity_np(threads[i], sizeof(cpu_set_t), &cpusets[i]);
+		pthread_setaffinity_np(threads[i], sizeof(cpu_set_t), &cpusets[i]);
 	}
 	for (i = 0; i < NUM_THREADS; i++) {
 		pthread_join(threads[i], NULL);
 	}
-	// print_board(inboard, nrows, ncols);
+	print_board(inboard, nrows, ncols);
 	// fprintf(stdout, "Done.\n");
 	// fflush(stdout);
 	return inboard;

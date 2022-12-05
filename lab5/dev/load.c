@@ -59,7 +59,7 @@ static char* load_board_values(FILE* input, const int nrows, const int ncols)
       board[next_row_start + jeast]++;
     }
   }
-  
+
   // print_board(board, nrows, ncols);
   return board;
 }

@@ -1,0 +1,5 @@
+Attempt 1: Sequential code but using bits to represent a cell (3 unused bits, 1 bit to represent curr state, 4 bits num neighbors). ~3 times speedup
+Attempt 2: Parallel code with no change list. ~30 times speedup.
+Attempt 3: Change list and parallel code. Too many locks contention, results in actually only 2x speedup.
+Attempt 4 (Latest): Change list and parallel code with threads assigned Num_row / Num_threads rows. Less lock contention, ~60x speedup, current submitted version.
+
